@@ -50,6 +50,14 @@ export interface Credito {
   fichas: Ficha[];
 }
 
+export type CreditoApi = Credito & {
+  clienteNombre?: string;
+  clienteApellido?: string;
+  clienteNegocio?: string;
+  clienteZona?: string;
+  observacion?: string;
+};
+
 export type MedioPago = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Mixto';
 
 export type AbonarFichaCreditoRequest = {

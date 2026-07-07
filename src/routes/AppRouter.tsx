@@ -1,28 +1,27 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from '../layout/Layout';
-import LoginPage from '../features/auth/pages/LoginPage';
+import LoginPage from '../features/auth/login/pages/LoginPage';
 import ProtectedRoute from './ProtectedRoute';
 
-import Clientes from '../features/creditos/pages/Clientes';
-import Cobranza from '../features/cobranza/pages/Cobranza';
-import Cortes from '../features/creditos/pages/Cortes';
-import Creditos from '../features/creditos/pages/Creditos';
-import Movimientos from '../features/creditos/pages/Movimientos';
-import HomePage from '../features/home/pages/Home';
-import DetalleCredito from '../features/creditos/pages/DetalleCredito';
-import EstadoCuentaCredito from '../features/creditos/pages/EstadoCuentaCredito';
-import CondonacionCredito from '../features/creditos/pages/CondonacionCredito';
-import NuevoCredito from '../features/creditos/pages/NuevoCredito';
-import Pendientes from '../features/cobranza/pages/Pendientes';
-import Reestructura from '../features/creditos/pages/Reestructura';
-import ConfiguracionSistema from '../features/general/pages/ConfiguracionSistema';
-import ZonasCobranza from '../features/general/pages/ZonasCobranza';
-import Auditoria from '../features/general/pages/Auditoria';
-import Feriados from '../features/general/pages/Feriados';
-import UsuariosSistema from '../features/seguridad/pages/Usuarios';
-import PerfilesSistema from '../features/seguridad/pages/Perfiles';
-import PermisosSistema from '../features/seguridad/pages/Permisos';
-import ElementosSistema from '../features/seguridad/pages/ElementosSistema';
+import Clientes from '../features/creditos/clientes/pages/Clientes';
+import Cobranza from '../features/cobranza/cobranza/pages/Cobranza';
+import Creditos from '../features/creditos/creditos/pages/Creditos';
+import Movimientos from '../features/creditos/movimientos/pages/Movimientos';
+import HomePage from '../features/home/dashboard/pages/Home';
+import DetalleCredito from '../features/creditos/detalleCredito/pages/DetalleCredito';
+import EstadoCuentaCredito from '../features/creditos/detalleCredito/pages/EstadoCuentaCredito';
+import CondonacionCredito from '../features/creditos/detalleCredito/pages/CondonacionCredito';
+import NuevoCredito from '../features/creditos/nuevoCredito/pages/NuevoCredito';
+import Pendientes from '../features/cobranza/pendientes/pages/Pendientes';
+import Reestructura from '../features/creditos/detalleCredito/pages/Reestructura';
+import ConfiguracionSistema from '../features/general/configuracion/pages/ConfiguracionSistema';
+import ZonasCobranza from '../features/general/zonas/pages/ZonasCobranza';
+import Auditoria from '../features/general/auditoria/pages/Auditoria';
+import Feriados from '../features/general/feriados/pages/Feriados';
+import UsuariosSistema from '../features/seguridad/usuarios/pages/Usuarios';
+import PerfilesSistema from '../features/seguridad/perfiles/pages/Perfiles';
+import PermisosSistema from '../features/seguridad/permisos/pages/Permisos';
+import ElementosSistema from '../features/seguridad/elementosSistema/pages/ElementosSistema';
 
 const AppRouter = () => {
   return (
@@ -35,16 +34,6 @@ const AppRouter = () => {
           <ProtectedRoute>
             <Layout>
               <Clientes />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/cortes"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Cortes />
             </Layout>
           </ProtectedRoute>
         }

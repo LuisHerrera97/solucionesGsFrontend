@@ -8,7 +8,6 @@ import {
   FilePlus2,
   Home,
   LogOut,
-  Scissors,
   Settings,
   Users,
   Wallet,
@@ -41,7 +40,6 @@ const Sidebar = ({
     if (ruta.startsWith('/movimientos')) return <ClipboardList size={20} />;
     if (ruta.startsWith('/pendientes')) return <AlertCircle size={20} />;
     if (ruta.startsWith('/cobranza')) return <ClipboardList size={20} />;
-    if (ruta.startsWith('/cortes')) return <Scissors size={20} />;
     if (ruta.startsWith('/seguridad')) return <Settings size={20} />;
     if (ruta.startsWith('/general')) return <Settings size={20} />;
     return <Settings size={20} />;
