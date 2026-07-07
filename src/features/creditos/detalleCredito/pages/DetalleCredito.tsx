@@ -11,6 +11,7 @@ import { useDetalleCreditoContext } from '../hooks/useDetalleCreditoContext';
 const DetalleCreditoContent = () => {
   const {
     navigate,
+    canBoton,
     creditoQuery,
     ticketModal,
     setTicketModal,
@@ -39,6 +40,13 @@ const DetalleCreditoContent = () => {
   const cuotasPagadas = fichas.filter((f) => f.pagada).length;
   const cuotasTotales = fichas.length;
   const saldoPendiente = (credito.total ?? 0) - (credito.pagado ?? 0);
+  const interesTotalPendiente = fichas
+    .filter((f) => !f.pagada)
+    .reduce((acc, f) => acc + (f.interes ?? 0), 0);
+  const hayInteresPorCondonar = interesTotalPendiente > 0;
+  const creditoVigente = credito.estatus === 'Activo';
+  const canReestructurar = canBoton('CREDITO_REESTRUCTURAR') && creditoVigente;
+  const canCondonarInteres = canBoton('CREDITO_CONDONAR_INTERES');
 
   return (
     <div className="space-y-8 pb-12">
@@ -51,13 +59,23 @@ const DetalleCreditoContent = () => {
             Cliente: <span className="text-slate-600">{credito.clienteNombre} {credito.clienteApellido}</span>
           </p>
         </div>
-        <div className="flex gap-3">
-          <button className="btn btn-light" onClick={() => navigate('/creditos')}>
+        <div className="flex flex-wrap gap-3">
+          <button type="button" className="btn btn-light" onClick={() => navigate('/creditos')}>
             Volver
           </button>
-          <button className="btn btn-primary shadow-lg shadow-primaryBlue/20" onClick={() => navigate(`/creditos/${credito.id}/estado-cuenta`)}>
+          <button type="button" className="btn btn-light" onClick={() => navigate(`/creditos/${credito.id}/estado-cuenta`)}>
             Estado de cuenta
           </button>
+          {hayInteresPorCondonar && canCondonarInteres && (
+            <button type="button" className="btn btn-light" onClick={() => navigate(`/creditos/${credito.id}/condonacion`)}>
+              Condonar interés
+            </button>
+          )}
+          {canReestructurar && (
+            <button type="button" className="btn btn-light" onClick={() => navigate(`/creditos/${credito.id}/reestructura`)}>
+              Reestructurar
+            </button>
+          )}
         </div>
       </div>
 

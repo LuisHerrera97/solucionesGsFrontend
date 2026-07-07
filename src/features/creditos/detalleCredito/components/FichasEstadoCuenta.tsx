@@ -17,15 +17,18 @@ export const FichasEstadoCuenta = ({
   fichas,
   fichaSiguienteNum,
 }: FichasEstadoCuentaProps) => {
-  const { 
-    setModalPago, 
-    setModalType, 
-    setMonto, 
-    setMora, 
-    setMedioPago, 
-    handleCalcularMora, 
-    handleCondonar 
+  const {
+    canBoton,
+    setModalPago,
+    setModalType,
+    setMonto,
+    setMora,
+    setMedioPago,
+    handleCalcularMora,
+    handleCondonar,
   } = useDetalleCreditoContext();
+
+  const canCondonarInteres = canBoton('CREDITO_CONDONAR_INTERES');
 
   const totales = useMemo(() => {
     return fichas.reduce(
@@ -234,7 +237,7 @@ export const FichasEstadoCuenta = ({
                     >
                       Penalizar
                     </button>
-                    {ficha.interes > 0 && (
+                    {ficha.interes > 0 && canCondonarInteres && (
                       <button
                         type="button"
                         className="btn btn-light w-full py-2.5 border-amber-200 text-amber-700 hover:bg-amber-50"
