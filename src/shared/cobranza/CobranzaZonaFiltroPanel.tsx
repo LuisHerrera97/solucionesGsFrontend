@@ -1,5 +1,5 @@
-import type { ZonaCobranzaDto } from '../../../general/types/types';
-import type { UsuarioDto } from '../../../seguridad/types/types';
+import type { ZonaCobranzaDto } from '../../features/general/types/types';
+import type { UsuarioDto } from '../../features/seguridad/types/types';
 
 type CobranzaZonaFiltroPanelProps = {
   user: UsuarioDto | null;

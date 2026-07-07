@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronDown, Search, UserRound, X } from 'lucide-react';
 import type { Cliente } from '../../types/types';
 
@@ -34,12 +34,11 @@ export const ClienteModal = ({ open, value, saving, zonas, zonasLoading, onChang
 
   const esEdicion = Boolean(value.id);
 
-  useEffect(() => {
-    if (!open) {
-      setZonaMenuAbierto(false);
-      setSearchTerm('');
-    }
-  }, [open]);
+  const handleClose = () => {
+    setZonaMenuAbierto(false);
+    setSearchTerm('');
+    onClose();
+  };
 
   const filteredZonas = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -56,7 +55,7 @@ export const ClienteModal = ({ open, value, saving, zonas, zonasLoading, onChang
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[3px]"
       role="presentation"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) handleClose();
       }}
     >
       <div
@@ -73,7 +72,7 @@ export const ClienteModal = ({ open, value, saving, zonas, zonasLoading, onChang
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 transition hover:bg-white/80 hover:text-slate-700 hover:shadow-sm sm:right-5 sm:top-5"
             aria-label="Cerrar"
           >
@@ -272,7 +271,7 @@ export const ClienteModal = ({ open, value, saving, zonas, zonasLoading, onChang
           <div className="flex shrink-0 justify-end gap-3 border-t border-slate-100 bg-gradient-to-t from-slate-50/95 to-white px-6 py-4 sm:px-8">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
             >
               Cancelar

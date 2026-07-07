@@ -1,22 +1,16 @@
-import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import StatusPanel from '../../../../shared/components/StatusPanel';
-import { useCreditoByIdQuery } from '../../creditos/hooks/creditosHooks';
 import { formatCalendarDateFromApi } from '../../../../shared/date/calendarDate';
+import { TipoCredito } from '../../../../shared/constants/dominio';
+import { useEstadoCuentaCreditoPage } from '../hooks/useEstadoCuentaCreditoPage';
 
 const EstadoCuentaCredito = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const creditoQuery = useCreditoByIdQuery(id);
-
-  const credito = creditoQuery.data;
-  const fichas = useMemo(() => credito?.fichas ?? [], [credito?.fichas]);
+  const { navigate, creditoQuery, credito, stats, fechaPrimerPago, fechaUltimoPago, calculateFichaDetails } = useEstadoCuentaCreditoPage();
 
   if (creditoQuery.isLoading) {
     return <StatusPanel variant="loading" title="Cargando estado de cuenta" message="Consultando el servidor..." />;
   }
 
-  if (creditoQuery.isError || !credito) {
+  if (creditoQuery.isError || !credito || !stats) {
     return (
       <div className="min-h-screen p-6">
         <StatusPanel variant="error" title="Crédito no encontrado" message="No fue posible cargar el estado de cuenta." />
@@ -29,18 +23,7 @@ const EstadoCuentaCredito = () => {
     );
   }
 
-  const saldoPendiente = credito.total - credito.pagado;
-  const totalMoraPendiente = fichas.reduce((acc, f) => {
-    const moraAcumulada = f.moraAcumulada ?? f.mora ?? 0;
-    const moraPagada = f.mora ?? 0;
-    return acc + Math.max(0, moraAcumulada - moraPagada);
-  }, 0);
-  const totalMoraGenerada = fichas.reduce((acc, f) => acc + (f.moraAcumulada ?? f.mora ?? 0), 0);
-  const totalAbono = fichas.reduce((acc, f) => acc + (f.abono ?? 0), 0);
-  const saldoTotal = saldoPendiente + totalMoraPendiente;
-
-  const fechaPrimerPago = fichas.length > 0 ? formatCalendarDateFromApi(fichas[0].fecha) : '-';
-  const fechaUltimoPago = fichas.length > 0 ? formatCalendarDateFromApi(fichas[fichas.length - 1].fecha) : '-';
+  const { saldoTotal, totalMoraGenerada, totalAbono, fichas } = stats;
 
   return (
     <div className="min-h-screen bg-white p-6 space-y-6 print:p-0 print:space-y-3">
@@ -78,7 +61,9 @@ const EstadoCuentaCredito = () => {
           <div className="md:text-right">
             <p className="text-xs uppercase text-textMuted tracking-wide">Crédito</p>
             <p className="text-lg font-semibold text-textDark">{credito.folio ?? credito.id}</p>
-            <p className="text-sm text-textMuted">{credito.tipo === 'diario' ? 'Diario' : (credito.tipo === 'semanal' ? 'Semanal' : 'Mensual')}</p>
+            <p className="text-sm text-textMuted">
+              {credito.tipo === TipoCredito.DIARIO ? 'Diario' : credito.tipo === TipoCredito.SEMANAL ? 'Semanal' : 'Mensual'}
+            </p>
             <div className="mt-1 flex flex-col md:items-end text-xs text-textMuted">
               <span>Primer pago: {fechaPrimerPago}</span>
               <span>Último pago: {fechaUltimoPago}</span>
@@ -124,11 +109,8 @@ const EstadoCuentaCredito = () => {
           </thead>
           <tbody>
             {fichas.map((f) => {
-              const cuotaPendiente = Math.max(0, (f.total ?? 0) - (f.abono ?? 0));
-              const moraAcumulada = f.moraAcumulada ?? f.mora ?? 0;
-              const moraPendiente = Math.max(0, moraAcumulada - (f.mora ?? 0));
-              const totalPendienteFicha = cuotaPendiente + moraPendiente;
-              
+              const { totalPendienteFicha, moraPendiente } = calculateFichaDetails(f);
+
               return (
                 <tr key={f.num} className="border-t border-gray-100">
                   <td className="p-3 whitespace-nowrap">{f.num}</td>

@@ -1,0 +1,41 @@
+---
+description: Convenciones de API y React Query
+globs: src/features/**/api.ts,src/features/**/hooks/**/*
+alwaysApply: false
+---
+
+# API y datos
+
+## Capa API (`features/{dominio}/api.ts`)
+
+- Usar `ApiService` + `unwrapApiResponse`.
+- URLs con `withQueryParams` / `withRouteParams` de `shared/utils/url`.
+- Funciones async nombradas en español: `obtenerClientes`, `crearCredito`, etc.
+- Tipar request/response con tipos de `features/{dominio}/types/`.
+- Tipos de dominio en `types/`, no en componentes (evitar exportar `*Draft` desde modales).
+
+```ts
+export const obtenerClientes = async (params?: {...}): Promise<ClientesListado> => {
+  const url = withQueryParams(API_ENDPOINTS_CREDITOS.CLIENTES, params ?? {});
+  const response = await ApiService.get({ url });
+  return unwrapApiResponse(response.data as ApiResponse<ClientesListado>);
+};
+```
+
+## Hooks de datos (`{subFeature}Hooks.ts`)
+
+- `useQuery` / `useMutation` de TanStack Query.
+- `queryKey` jerárquica: `['creditos', 'clientes', ...params]`.
+- Invalidar queries relacionadas en `onSuccess` de mutaciones.
+- Queries condicionales con `enabled: Boolean(id)`.
+
+## Errores y feedback
+
+- Mensajes de error: `getErrorMessage(err, 'Mensaje fallback')`.
+- Éxito/error al usuario: `toast` de `react-toastify`.
+
+## Imports entre dominios
+
+- Un sub-feature puede importar `*Hooks.ts` de otro dominio si comparten datos (ej. cobranza → `dashboardHooks`).
+- No importar componentes de otro sub-feature salvo casos justificados; preferir `shared/`.
+- `home/dashboard` consume componentes de `creditos/dashboard` para el panel principal.

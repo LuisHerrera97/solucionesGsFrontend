@@ -1,0 +1,40 @@
+---
+description: Estilos Tailwind y componentes compartidos
+globs: **/*.tsx,src/index.css
+alwaysApply: false
+---
+
+# UI y estilos
+
+## Tailwind v4
+
+- Tokens en `src/index.css` (`@theme`): `primaryBlue`, `textDark`, `textMuted`, etc.
+- Usar clases del tema, no colores hardcodeados arbitrarios.
+
+## Clases de componentes (index.css)
+
+- Botones: `btn btn-primary`, `btn btn-light`
+- Formularios: `form-input`, `form-select`, `form-label`
+- Tarjetas: `card`
+- Badges: `badge badge-success | badge-warning | badge-danger`
+
+## Componentes compartidos (`src/shared/components/`)
+
+- `StatusPanel` — loading / error / empty
+- `ConfirmDialog` — confirmaciones y éxito con acción
+- `ModalShell` — base de modales
+- `AppSearchInput` — búsqueda
+- `Spinner`
+
+## Módulos compartidos de dominio
+
+- `shared/cobranza/CobranzaZonaFiltroPanel` — filtro de zona en listados
+- `shared/creditos/PagoFichasVigentesModal` — pago de fichas vigentes desde clientes
+- `shared/ticket/printTicket` — impresión de ticket de cobro
+
+## Layout y composición
+
+- Espaciado entre secciones: `space-y-6`
+- Contenedores: `rounded-xl border border-gray-100 bg-white shadow-sm`
+- Iconos: `lucide-react`
+- Gráficas del dashboard: componentes en `creditos/dashboard/components/` (Recharts)

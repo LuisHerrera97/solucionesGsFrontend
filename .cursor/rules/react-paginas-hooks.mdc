@@ -1,0 +1,43 @@
+---
+description: Patrón de páginas delgadas y hooks de pantalla
+globs: src/features/**/pages/**,src/features/**/hooks/use*Page.ts
+alwaysApply: false
+---
+
+# Páginas y hooks
+
+## Separación de responsabilidades
+
+| Archivo | Responsabilidad |
+|---------|-----------------|
+| `pages/X.tsx` | JSX, composición de componentes, estados de UI visibles |
+| `hooks/useXPage.ts` | estado local, permisos, handlers, datos derivados |
+| `hooks/xHooks.ts` | queries/mutations React Query |
+| `hooks/useX*.ts` | lógica parcial (CRUD, búsqueda, acciones, modales) |
+
+## Páginas
+
+- Una página = un hook `use{Nombre}Page` que concentra la lógica.
+- La página **no** debe llamar `ApiService`, `useQuery` ni `useMutation` directamente.
+- Estados de carga/error/vacío con `StatusPanel` (`variant: loading | error | empty`).
+- Permisos con `useAuth().canBoton('CLAVE_BOTON')` antes de mostrar acciones.
+
+## Hooks de página
+
+- Exportar hooks nombrados: `export const useClientesPage = () => { ... }`.
+- `useMemo` para listas y totales derivados; `useEffect` solo para sincronización (paginación, etc.).
+- Paginación: constante `PAGE_SIZE` al inicio del hook.
+- Pantallas complejas: dividir en hooks parciales (`useClientesCrud`, `useClientesSearch`, `useDetalleCreditoModals`, …).
+- Si el hook retorna muchos valores, agrupar por concepto (`modals`, `pagination`, `actions`) en lugar de exponer 30+ props sueltas.
+- Las mutaciones se usan en hooks, no en la página. Evitar exponer `*Mutation` a la página salvo para `isPending` puntual.
+
+## Excepción: DetalleCredito
+
+`detalleCredito` usa `DetalleCreditoProvider` + `useDetalleCreditoContext` porque modales y fichas consumen el mismo estado en profundidad. El hook `useDetalleCreditoPage` sigue siendo la fuente de lógica; el context solo distribuye el valor.
+
+Componentes hijos que lean contexto: `FichasEstadoCuenta`, `PagoCuotaModal`, `PenalizacionModal`.
+
+## Componentes con lógica
+
+- Preferir props + callbacks desde el hook de página.
+- Si un componente necesita mutación propia (ej. editor con estado local extenso), puede usar `*Hooks.ts` internamente; mantener la página libre de datos.

@@ -1,59 +1,23 @@
-import { useMemo, useState } from 'react';
-import { toast } from 'react-toastify';
-import { useAuth } from '../../../auth/context/useAuth';
 import StatusPanel from '../../../../shared/components/StatusPanel';
-import { useDashboardMovimientosRangoQuery } from '../../dashboard/hooks/dashboardHooks';
-import { useReversarMovimientoCreditoMutation } from '../../detalleCredito/hooks/detalleCreditoHooks';
-import { formatCalendarDateFromApi, localCalendarDayKey } from '../../../../shared/date/calendarDate';
-import { getErrorMessage } from '../../../../shared/utils/getErrorMessage';
-import { buildTicketHtml } from '../../../../shared/ticket/buildTicketHtml';
+import { formatCalendarDateFromApi } from '../../../../shared/date/calendarDate';
+import { useMovimientosPage } from '../hooks/useMovimientosPage';
 
 const Movimientos = () => {
-  const { canBoton } = useAuth();
-  const puedeReversarMovimiento = canBoton('CREDITO_REVERSAR');
-  const hoy = localCalendarDayKey();
-  const [fechaDesde, setFechaDesde] = useState(hoy);
-  const [fechaHasta, setFechaHasta] = useState(hoy);
-  const [creditoFolio, setCreditoFolio] = useState('');
-  const [clienteNombre, setClienteNombre] = useState('');
-
-  const movimientosQuery = useDashboardMovimientosRangoQuery({
+  const {
+    puedeReversarMovimiento,
     fechaDesde,
+    setFechaDesde,
     fechaHasta,
-    creditoFolio: creditoFolio.trim() || undefined,
-    clienteNombre: clienteNombre.trim() || undefined,
-  });
-  const reversarMutation = useReversarMovimientoCreditoMutation();
-
-  const movimientos = useMemo(() => movimientosQuery.data ?? [], [movimientosQuery.data]);
-  const printTicket = (id: string) => {
-    const m = movimientos.find((x) => x.id === id);
-    if (!m) return;
-    const html = buildTicketHtml({
-      fecha: formatCalendarDateFromApi(m.fecha),
-      hora: m.hora ?? '-',
-      cliente: m.clienteNombre ?? '-',
-      folio: m.creditoFolio ?? '-',
-      concepto: m.concepto ?? m.tipo,
-      ficha: m.numeroFicha ? `#${m.numeroFicha}` : '-',
-      total: m.total,
-    });
-    const win = window.open('', '_blank', 'width=380,height=640');
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    win.print();
-  };
-  const desaplicar = async (id: string, creditoId?: string | null) => {
-    if (!creditoId) return;
-    try {
-      await reversarMutation.mutateAsync({ creditoId, movimientoId: id });
-      toast.success('Operación desaplicada');
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'No fue posible desaplicar la operación'));
-    }
-  };
+    setFechaHasta,
+    creditoFolio,
+    setCreditoFolio,
+    clienteNombre,
+    setClienteNombre,
+    movimientosQuery,
+    movimientos,
+    handlePrintTicket,
+    handleDesaplicar,
+  } = useMovimientosPage();
 
   return (
     <div className="space-y-6">
@@ -64,20 +28,20 @@ const Movimientos = () => {
 
       <div className="grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm md:grid-cols-4">
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase text-textMuted">Desde</label>
-          <input type="date" className="input w-full" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
+          <label className="form-label">Desde</label>
+          <input type="date" className="form-input" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase text-textMuted">Hasta</label>
-          <input type="date" className="input w-full" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+          <label className="form-label">Hasta</label>
+          <input type="date" className="form-input" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase text-textMuted">Folio crédito</label>
-          <input className="input w-full" value={creditoFolio} onChange={(e) => setCreditoFolio(e.target.value)} placeholder="CRE1234" />
+          <label className="form-label">Folio crédito</label>
+          <input className="form-input" value={creditoFolio} onChange={(e) => setCreditoFolio(e.target.value)} placeholder="CRE1234" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase text-textMuted">Cliente</label>
-          <input className="input w-full" value={clienteNombre} onChange={(e) => setClienteNombre(e.target.value)} placeholder="Nombre o apellido" />
+          <label className="form-label">Cliente</label>
+          <input className="form-input" value={clienteNombre} onChange={(e) => setClienteNombre(e.target.value)} placeholder="Nombre o apellido" />
         </div>
       </div>
 
@@ -114,11 +78,11 @@ const Movimientos = () => {
                     <td className="p-2 text-right font-semibold">${m.total.toLocaleString()}</td>
                     <td className="p-2">
                       <div className="flex justify-end gap-2">
-                        <button type="button" className="btn btn-light px-2 py-1 text-[10px]" onClick={() => printTicket(m.id)}>
+                        <button type="button" className="btn btn-light px-2 py-1 text-[10px]" onClick={() => handlePrintTicket(m.id)}>
                           Reimprimir
                         </button>
                         {puedeReversarMovimiento && !m.revertido && !m.reversaDeId && (m.tipo === 'Ficha' || m.tipo === 'Penalizacion') && (
-                          <button type="button" className="btn btn-light px-2 py-1 text-[10px]" onClick={() => desaplicar(m.id, m.creditoId)}>
+                          <button type="button" className="btn btn-light px-2 py-1 text-[10px]" onClick={() => handleDesaplicar(m.id, m.creditoId)}>
                             Desaplicar
                           </button>
                         )}

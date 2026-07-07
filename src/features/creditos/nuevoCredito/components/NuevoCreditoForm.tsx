@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { numberInputDisplay, parseNumberInput, type NumberInputValue } from '../../../../shared/utils/numberInput';
 import { ClienteSelectBusqueda } from './ClienteSelectBusqueda';
+
+import { TipoCredito, type TipoCredito as TipoCreditoType } from '../../../../shared/constants/dominio';
 
 /** Evita 9.99999999991 en el input y en porcentaje mostrado. */
 const formatTasaPctInput = (ratio: number) => {
@@ -14,14 +16,14 @@ type NuevoCreditoFormProps = {
   selectedClienteId: string;
   monto: NumberInputValue;
   plazo: NumberInputValue;
-  tipo: 'diario' | 'semanal' | 'mensual';
+  tipo: TipoCreditoType;
   permitirDomingo: boolean;
   aplicarFeriados: boolean;
   onChangeClienteId: (value: string) => void;
   onClienteEtiqueta?: (etiqueta: string) => void;
   onChangeMonto: (value: NumberInputValue) => void;
   onChangePlazo: (value: NumberInputValue) => void;
-  onChangeTipo: (value: 'diario' | 'semanal' | 'mensual') => void;
+  onChangeTipo: (value: TipoCreditoType) => void;
   onChangePermitirDomingo: (value: boolean) => void;
   onChangeAplicarFeriados: (value: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -57,11 +59,15 @@ export const NuevoCreditoForm = ({
   onChangeTasaManual,
   onChangeObservacion,
 }: NuevoCreditoFormProps) => {
-  const [tasaPctStr, setTasaPctStr] = useState(() => formatTasaPctInput(tasaManual ?? tasaDefault));
-
-  useEffect(() => {
-    setTasaPctStr(formatTasaPctInput(tasaManual ?? tasaDefault));
-  }, [tasaDefault, tipo]);
+  const tasaFromProps = formatTasaPctInput(tasaManual ?? tasaDefault);
+  const [tasaOverride, setTasaOverride] = useState<string | null>(null);
+  const tasaBaseKey = `${tipo}|${tasaDefault}|${tasaManual ?? ''}`;
+  const [lastTasaKey, setLastTasaKey] = useState(tasaBaseKey);
+  if (lastTasaKey !== tasaBaseKey) {
+    setLastTasaKey(tasaBaseKey);
+    setTasaOverride(null);
+  }
+  const tasaPctStr = tasaOverride ?? tasaFromProps;
 
   return (
     <form id={formId} onSubmit={onSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
@@ -82,15 +88,15 @@ export const NuevoCreditoForm = ({
           <label className="form-label">Plazo</label>
           <input type="number" className="form-input" min={1} value={numberInputDisplay(plazo)} onChange={(e) => onChangePlazo(parseNumberInput(e.target.value))} required />
           <p className="text-xs text-textMuted mt-1">
-            {tipo === 'diario' ? 'Número de días hábiles' : (tipo === 'semanal' ? 'Número de semanas' : 'Número de meses')}
+            {tipo === TipoCredito.DIARIO ? 'Número de días hábiles' : tipo === TipoCredito.SEMANAL ? 'Número de semanas' : 'Número de meses'}
           </p>
         </div>
         <div>
           <label className="form-label">Tipo</label>
-          <select className="form-select" value={tipo} onChange={(e) => onChangeTipo(e.target.value as 'diario' | 'semanal' | 'mensual')}>
-            <option value="diario">Diario</option>
-            <option value="semanal">Semanal</option>
-            <option value="mensual">Mensual</option>
+          <select className="form-select" value={tipo} onChange={(e) => onChangeTipo(e.target.value as TipoCreditoType)}>
+            <option value={TipoCredito.DIARIO}>Diario</option>
+            <option value={TipoCredito.SEMANAL}>Semanal</option>
+            <option value={TipoCredito.MENSUAL}>Mensual</option>
           </select>
         </div>
       </div>
@@ -105,7 +111,7 @@ export const NuevoCreditoForm = ({
             value={tasaPctStr}
             onChange={(e) => {
               const v = e.target.value;
-              setTasaPctStr(v);
+              setTasaOverride(v);
               if (v === '' || v === '-' || v === '.' || v === '-.') {
                 onChangeTasaManual(null);
                 return;
@@ -118,18 +124,18 @@ export const NuevoCreditoForm = ({
               const trimmed = tasaPctStr.trim();
               if (trimmed === '') {
                 onChangeTasaManual(null);
-                setTasaPctStr(formatTasaPctInput(tasaDefault));
+                setTasaOverride(formatTasaPctInput(tasaDefault));
                 return;
               }
               const n = Number(trimmed);
               if (!Number.isFinite(n)) {
                 onChangeTasaManual(null);
-                setTasaPctStr(formatTasaPctInput(tasaDefault));
+                setTasaOverride(formatTasaPctInput(tasaDefault));
                 return;
               }
               const ratio = n / 100;
               onChangeTasaManual(ratio);
-              setTasaPctStr(formatTasaPctInput(ratio));
+              setTasaOverride(formatTasaPctInput(ratio));
             }}
           />
           <p className="text-xs text-textMuted mt-1">Puedes modificar la tasa para este crédito específico.</p>

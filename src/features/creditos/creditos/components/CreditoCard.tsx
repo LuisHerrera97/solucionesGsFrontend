@@ -1,13 +1,16 @@
 import { FileText } from 'lucide-react';
 import type { CreditoApi } from '../../api';
 
+import { EstatusCliente } from '../../../../shared/constants/dominio';
+
 type CreditoCardProps = {
   credito: CreditoApi;
   onVerDetalles: () => void;
-  onPagarFichas?: () => void;
+  onPagarFichaVigente?: () => void;
+  onPagarFichaAtrasada?: () => void;
 };
 
-export const CreditoCard = ({ credito, onVerDetalles, onPagarFichas }: CreditoCardProps) => {
+export const CreditoCard = ({ credito, onVerDetalles, onPagarFichaVigente, onPagarFichaAtrasada }: CreditoCardProps) => {
   const progreso = (credito.pagado / credito.total) * 100;
 
   return (
@@ -45,7 +48,7 @@ export const CreditoCard = ({ credito, onVerDetalles, onPagarFichas }: CreditoCa
         <div className="flex flex-col gap-2 shrink-0 order-1 sm:order-3 w-full sm:w-auto">
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium text-center w-fit ${
-              credito.estatus === 'Activo'
+              credito.estatus === EstatusCliente.ACTIVO
                 ? 'bg-green-100 text-green-700'
                 : credito.estatus === 'Liquidado'
                   ? 'bg-blue-100 text-blue-700'
@@ -57,9 +60,14 @@ export const CreditoCard = ({ credito, onVerDetalles, onPagarFichas }: CreditoCa
           <button type="button" className="text-sm text-primaryBlue hover:underline py-1 text-left sm:text-center whitespace-nowrap min-w-0 w-fit" onClick={onVerDetalles}>
             Ver detalles
           </button>
-          {onPagarFichas && credito.estatus === 'Activo' && (
-            <button type="button" className="text-sm text-primaryBlue hover:underline py-1 text-left sm:text-center whitespace-nowrap min-w-0 w-fit" onClick={onPagarFichas}>
-              Pagar fichas
+          {onPagarFichaVigente && credito.estatus === EstatusCliente.ACTIVO && (
+            <button type="button" className="text-sm text-primaryBlue hover:underline py-1 text-left sm:text-center whitespace-nowrap min-w-0 w-fit" onClick={onPagarFichaVigente}>
+              Pagar ficha vigente
+            </button>
+          )}
+          {onPagarFichaAtrasada && credito.estatus === EstatusCliente.ACTIVO && (
+            <button type="button" className="text-sm text-amber-700 hover:underline py-1 text-left sm:text-center whitespace-nowrap min-w-0 w-fit" onClick={onPagarFichaAtrasada}>
+              Pagar ficha atrasada
             </button>
           )}
         </div>

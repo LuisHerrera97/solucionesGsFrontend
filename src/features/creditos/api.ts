@@ -107,30 +107,6 @@ export const abonarFicha = async (payload: AbonarFichaCreditoRequest): Promise<C
   return unwrapApiResponse(response.data as ApiResponse<CreditoApi>);
 };
 
-export const abonarFichasVigentes = async (payload: {
-  creditoId: string;
-  cantidadFichas: number;
-  montoAbono: number;
-  medio: AbonarFichaCreditoRequest['medio'];
-  montoEfectivo?: number;
-  montoTransferencia?: number;
-  idempotencyKey?: string;
-}): Promise<CreditoApi> => {
-  const url = withRouteParams(API_ENDPOINTS_CREDITOS.ABONO_FICHAS_VIGENTES, { creditoId: payload.creditoId });
-  const response = await ApiService.post({
-    url,
-    data: {
-      idempotencyKey: payload.idempotencyKey,
-      cantidadFichas: payload.cantidadFichas,
-      montoAbono: payload.montoAbono,
-      medio: payload.medio,
-      montoEfectivo: payload.montoEfectivo,
-      montoTransferencia: payload.montoTransferencia,
-    },
-  });
-  return unwrapApiResponse(response.data as ApiResponse<CreditoApi>);
-};
-
 export const penalizarFicha = async (payload: PenalizarFichaCreditoRequest): Promise<CreditoApi> => {
   const url = withRouteParams(API_ENDPOINTS_CREDITOS.MULTA_FICHA, {
     creditoId: payload.creditoId,

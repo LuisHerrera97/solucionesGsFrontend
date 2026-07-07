@@ -1,28 +1,26 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 import StatusPanel from '../../../../shared/components/StatusPanel';
-import { getErrorMessage } from '../../../../shared/utils/getErrorMessage';
-import { asNumber, type NumberInputValue } from '../../../../shared/utils/numberInput';
-import { useCreditoByIdQuery } from '../../creditos/hooks/creditosHooks';
-import { useReestructurarCreditoMutation } from '../hooks/detalleCreditoHooks';
 import { ReestructuraForm } from '../components/ReestructuraForm';
 import { ReestructuraInfoCards } from '../components/ReestructuraInfoCards';
+import { useReestructuraPage } from '../hooks/useReestructuraPage';
 
 const Reestructura = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-
-  const creditoQuery = useCreditoByIdQuery(id);
-
-  const credito = creditoQuery.data;
-
-  const [montoExtra, setMontoExtra] = useState<NumberInputValue>(0);
-  const [nuevoPlazo, setNuevoPlazo] = useState<NumberInputValue>(0);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const reestructuraMutation = useReestructurarCreditoMutation();
+  const {
+    navigate,
+    creditoQuery,
+    credito,
+    montoExtra,
+    setMontoExtra,
+    nuevoPlazo,
+    setNuevoPlazo,
+    confirmOpen,
+    setConfirmOpen,
+    reestructuraMutation,
+    saldoPendiente,
+    confirmMessage,
+    handleSubmitIntent,
+    aplicarReestructura,
+  } = useReestructuraPage();
 
   if (creditoQuery.isLoading) {
     return <StatusPanel variant="loading" title="Cargando crédito" message="Consultando el servidor..." />;
@@ -38,41 +36,6 @@ const Reestructura = () => {
       </div>
     );
   }
-
-  const saldoPendiente = credito.total - credito.pagado;
-  const plazoDefault = (nuevoPlazo === '' ? 0 : nuevoPlazo) || credito.totalFichas;
-  const montoExtraSafe = Math.max(0, asNumber(montoExtra));
-  const nuevoMontoCredito = saldoPendiente + montoExtraSafe;
-  const folioLabel = credito.folio?.trim() || 'este crédito';
-  const confirmMessage = `Crédito ${folioLabel}: el saldo pendiente de $${saldoPendiente.toLocaleString()}${montoExtraSafe > 0 ? ` más $${montoExtraSafe.toLocaleString()} extra` : ''} generará un nuevo crédito de $${nuevoMontoCredito.toLocaleString()} en ${plazoDefault} ficha(s). El crédito actual quedará como reestructurado.`;
-
-  const handleSubmitIntent = (e: React.FormEvent) => {
-    e.preventDefault();
-    const plazo = plazoDefault;
-    if (plazo <= 0) {
-      toast.error('El plazo debe ser al menos 1 ficha.');
-      return;
-    }
-    setConfirmOpen(true);
-  };
-
-  const aplicarReestructura = async () => {
-    const plazo = plazoDefault;
-    if (plazo <= 0) return;
-    try {
-      await reestructuraMutation.mutateAsync({
-        creditoId: credito.id,
-        nuevoMonto: nuevoMontoCredito,
-        nuevoPlazo: plazo,
-        tipo: credito.tipo,
-      });
-      toast.success('Crédito reestructurado');
-      setConfirmOpen(false);
-      navigate('/creditos');
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'No fue posible reestructurar el crédito'));
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -117,4 +80,3 @@ const Reestructura = () => {
 };
 
 export default Reestructura;
-

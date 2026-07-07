@@ -1,56 +1,26 @@
 import { ArrowRightLeft, Banknote, CreditCard, History, Scale } from 'lucide-react';
-import { toast } from 'react-toastify';
-import { useAuth } from '../../../auth/context/useAuth';
-import { useMovimientosByCreditoQuery, useReversarMovimientoCreditoMutation } from '../hooks/detalleCreditoHooks';
 import StatusPanel from '../../../../shared/components/StatusPanel';
 import { formatCalendarDateFromApi } from '../../../../shared/date/calendarDate';
-import { getErrorMessage } from '../../../../shared/utils/getErrorMessage';
-import { buildTicketHtml } from '../../../../shared/ticket/buildTicketHtml';
+import { useHistorialPagos } from '../hooks/useHistorialPagos';
+
+import { MedioPago } from '../../../../shared/constants/dominio';
 
 type HistorialPagosProps = {
   creditoId: string;
 };
 
 export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
-  const { canBoton } = useAuth();
-  const puedeReversarMovimiento = canBoton('CREDITO_REVERSAR');
-  const movimientosQuery = useMovimientosByCreditoQuery(creditoId);
-  const reversarMutation = useReversarMovimientoCreditoMutation();
+  const {
+    movimientos,
+    movimientosQuery,
+    puedeReversarMovimiento,
+    handlePrintTicket,
+    handleReversa,
+  } = useHistorialPagos(creditoId);
 
   if (movimientosQuery.isLoading) {
     return <StatusPanel variant="loading" title="Cargando historial" message="Obteniendo movimientos del crédito..." />;
   }
-
-  const movimientos = movimientosQuery.data ?? [];
-
-  const printTicket = (mId: string) => {
-    const movimiento = movimientos.find((m) => m.id === mId);
-    if (!movimiento) return;
-    const html = buildTicketHtml({
-      fecha: formatCalendarDateFromApi(movimiento.fecha),
-      hora: movimiento.hora ?? '-',
-      cliente: movimiento.clienteNombre ?? '-',
-      folio: movimiento.creditoFolio ?? '-',
-      concepto: movimiento.concepto ?? movimiento.tipo,
-      ficha: movimiento.numeroFicha ? `#${movimiento.numeroFicha}` : '-',
-      total: movimiento.total,
-    });
-    const win = window.open('', '_blank', 'width=380,height=640');
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    win.print();
-  };
-
-  const handleReversa = async (movimientoId: string) => {
-    try {
-      await reversarMutation.mutateAsync({ creditoId, movimientoId });
-      toast.success('Operación desaplicada');
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'No fue posible desaplicar la operación'));
-    }
-  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
@@ -97,7 +67,6 @@ export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-transparent group-hover:bg-primaryBlue rounded-r-full transition-all duration-300" />
                 
                 <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-4">
-                  {/* Tipo */}
                   <div className="col-span-1">
                     <div className="flex flex-col">
                       <span
@@ -117,7 +86,6 @@ export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
                     </div>
                   </div>
 
-                  {/* Ficha */}
                   <div className="col-span-1 text-center">
                     {m.numeroFicha ? (
                       <span className="px-3 py-1 rounded-full bg-slate-50 text-slate-400 text-[10px] font-black border border-slate-100">
@@ -128,7 +96,6 @@ export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
                     )}
                   </div>
 
-                  {/* Fecha */}
                   <div className="col-span-1">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-700">{fecha}</span>
@@ -136,7 +103,6 @@ export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
                     </div>
                   </div>
 
-                  {/* Medio */}
                   <div className="col-span-1 flex justify-center">
                     {esSoloHistorial ? (
                       <div className="p-2 rounded-xl border flex items-center gap-2 bg-slate-50 text-slate-500 border-slate-100">
@@ -146,22 +112,21 @@ export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
                     ) : (
                       <div
                         className={`p-2 rounded-xl border flex items-center gap-2 ${
-                          m.medio === 'Efectivo'
+                          m.medio === MedioPago.EFECTIVO
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                            : m.medio === 'Transferencia'
+                            : m.medio === MedioPago.TRANSFERENCIA
                               ? 'bg-blue-50 text-blue-600 border-blue-100'
                               : 'bg-violet-50 text-violet-600 border-violet-100'
                         }`}
                       >
-                        {m.medio === 'Efectivo' && <Banknote size={14} />}
-                        {m.medio === 'Transferencia' && <ArrowRightLeft size={14} />}
-                        {m.medio === 'Mixto' && <CreditCard size={14} />}
+                        {m.medio === MedioPago.EFECTIVO && <Banknote size={14} />}
+                        {m.medio === MedioPago.TRANSFERENCIA && <ArrowRightLeft size={14} />}
+                        {m.medio === MedioPago.MIXTO && <CreditCard size={14} />}
                         <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">{m.medio}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Detalle Montos */}
                   <div className="col-span-1 text-right">
                     <div className="flex flex-col items-end">
                       {(m.abono ?? 0) > 0 && (
@@ -176,13 +141,12 @@ export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
                     </div>
                   </div>
 
-                  {/* Total */}
                   <div className="col-span-1 text-right">
                     <span className="text-lg font-black text-slate-800 font-mono tracking-tighter">
                       ${m.total.toLocaleString()}
                     </span>
                     <div className="mt-2 flex justify-end gap-2">
-                      <button type="button" className="btn btn-light px-2 py-1 text-[10px]" onClick={() => printTicket(m.id)}>
+                      <button type="button" className="btn btn-light px-2 py-1 text-[10px]" onClick={() => handlePrintTicket(m.id)}>
                         Reimprimir
                       </button>
                       {puedeReversarMovimiento && !m.revertido && !m.reversaDeId && (m.tipo === 'Ficha' || m.tipo === 'Penalizacion') && (
@@ -201,4 +165,3 @@ export const HistorialPagos = ({ creditoId }: HistorialPagosProps) => {
     </div>
   );
 };
-

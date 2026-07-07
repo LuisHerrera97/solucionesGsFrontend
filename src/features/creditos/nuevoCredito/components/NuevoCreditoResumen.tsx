@@ -1,6 +1,8 @@
 import { DollarSign } from 'lucide-react';
 import { asNumber, type NumberInputValue } from '../../../../shared/utils/numberInput';
 
+import { TipoCredito } from '../../../../shared/constants/dominio';
+
 type NuevoCreditoResumenProps = {
   tipo: 'diario' | 'semanal' | 'mensual';
   monto: NumberInputValue;
@@ -21,7 +23,7 @@ export const NuevoCreditoResumen = ({ tipo, monto, tasa, interesTotal, total, cu
         <div>
           <p className="text-sm font-medium text-textMuted">Resumen del crédito</p>
           <p className="text-lg font-semibold text-textDark">
-            {tipo === 'diario' ? 'Crédito diario' : (tipo === 'semanal' ? 'Crédito semanal' : 'Crédito mensual')}
+            {tipo === TipoCredito.DIARIO ? 'Crédito diario' : tipo === TipoCredito.SEMANAL ? 'Crédito semanal' : 'Crédito mensual'}
           </p>
         </div>
       </div>
@@ -41,7 +43,7 @@ export const NuevoCreditoResumen = ({ tipo, monto, tasa, interesTotal, total, cu
         </div>
         <div className="flex justify-between">
           <span className="text-textMuted">
-            {tipo === 'diario' ? 'Pago diario' : (tipo === 'semanal' ? 'Pago semanal' : 'Pago mensual')}
+            {tipo === TipoCredito.DIARIO ? 'Pago diario' : tipo === TipoCredito.SEMANAL ? 'Pago semanal' : 'Pago mensual'}
           </span>
           <span className="font-bold text-primaryBlue">${cuota.toLocaleString()}</span>
         </div>

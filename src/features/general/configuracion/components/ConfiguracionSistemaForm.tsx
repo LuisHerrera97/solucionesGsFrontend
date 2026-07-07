@@ -13,6 +13,67 @@ import {
 import { useActualizarConfiguracionSistemaMutation } from '../hooks/configuracionHooks';
 import { useAuth } from '../../../auth/context/useAuth';
 
+import type { NumberInputValue } from '../../../../shared/utils/numberInput';
+
+type ConfigSectionProps = {
+  title: string;
+  mora: NumberInputValue;
+  gracia: NumberInputValue;
+  tope: NumberInputValue;
+  onChangeMora: (val: NumberInputValue) => void;
+  onChangeGracia: (val: NumberInputValue) => void;
+  onChangeTope: (val: NumberInputValue) => void;
+  disabled?: boolean;
+};
+
+const ConfigMoraSection = ({ title, mora, gracia, tope, onChangeMora, onChangeGracia, onChangeTope, disabled }: ConfigSectionProps) => (
+  <div className="bg-gray-50/50 p-5 rounded-xl border border-gray-100 space-y-4">
+    <h3 className="text-sm font-bold text-primaryBlue uppercase tracking-wider">{title}</h3>
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Mora ($/periodo)</label>
+        <input
+          type="number"
+          min={0}
+          value={numberInputDisplay(mora)}
+          onChange={(e) => onChangeMora(parseNumberInput(e.target.value))}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
+          disabled={disabled}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Días gracia</label>
+          <input
+            type="number"
+            min={0}
+            value={numberInputDisplay(gracia)}
+            onChange={(e) => onChangeGracia(parseNumberInput(e.target.value))}
+            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
+            disabled={disabled}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tope mora (veces)</label>
+          <input
+            type="number"
+            min={0}
+            value={numberInputDisplay(tope)}
+            onChange={(e) => onChangeTope(parseNumberInput(e.target.value))}
+            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
+            disabled={disabled}
+          />
+        </div>
+      </div>
+      <p className="text-xs text-infoBlue font-medium">
+        {asNumber(gracia) === 0
+          ? 'La mora se aplica inmediatamente al día siguiente del vencimiento.'
+          : `La mora se aplica a partir del ${asNumber(gracia) + 1}.º día de atraso.`}
+      </p>
+    </div>
+  </div>
+);
+
 export const ConfiguracionSistemaForm = ({ initial }: { initial: ConfiguracionSistemaDto }) => {
   const [formData, setFormData] = useState<WithEmptyNumberFields<ConfiguracionSistemaDto>>(initial);
   const updateMutation = useActualizarConfiguracionSistemaMutation();
@@ -34,156 +95,45 @@ export const ConfiguracionSistemaForm = ({ initial }: { initial: ConfiguracionSi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Configuración Diaria */}
-        <div className="bg-gray-50/50 p-5 rounded-xl border border-gray-100 space-y-4">
-          <h3 className="text-sm font-bold text-primaryBlue uppercase tracking-wider">Créditos Diarios</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mora ($/día)</label>
-              <input
-                type="number"
-                min={0}
-                value={numberInputDisplay(formData.moraDiaria)}
-                onChange={(e) => setFormData((prev) => ({ ...prev, moraDiaria: parseNumberInput(e.target.value) }))}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                disabled={loading}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Días gracia</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={numberInputDisplay(formData.diasGraciaDiaria)}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, diasGraciaDiaria: parseNumberInput(e.target.value) }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tope mora (veces)</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={numberInputDisplay(formData.topeMoraDiaria)}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, topeMoraDiaria: parseNumberInput(e.target.value) }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-            <p className="text-xs text-infoBlue font-medium">
-              {asNumber(formData.diasGraciaDiaria) === 0
-                ? 'La mora se aplica inmediatamente al día siguiente del vencimiento.'
-                : `La mora se aplica a partir del ${asNumber(formData.diasGraciaDiaria) + 1}.º día de atraso.`}
-            </p>
-          </div>
-        </div>
-
-        {/* Configuración Semanal */}
-        <div className="bg-gray-50/50 p-5 rounded-xl border border-gray-100 space-y-4">
-          <h3 className="text-sm font-bold text-primaryBlue uppercase tracking-wider">Créditos Semanales</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mora ($/día)</label>
-              <input
-                type="number"
-                min={0}
-                value={numberInputDisplay(formData.moraSemanal)}
-                onChange={(e) => setFormData((prev) => ({ ...prev, moraSemanal: parseNumberInput(e.target.value) }))}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                disabled={loading}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Días gracia</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={numberInputDisplay(formData.diasGraciaSemanal)}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, diasGraciaSemanal: parseNumberInput(e.target.value) }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tope mora (veces)</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={numberInputDisplay(formData.topeMoraSemanal)}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, topeMoraSemanal: parseNumberInput(e.target.value) }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-            <p className="text-xs text-infoBlue font-medium">
-              {asNumber(formData.diasGraciaSemanal) === 0
-                ? 'La mora se aplica inmediatamente al día siguiente del vencimiento.'
-                : `La mora se aplica a partir del ${asNumber(formData.diasGraciaSemanal) + 1}.º día de atraso.`}
-            </p>
-          </div>
-        </div>
-
-        {/* Configuración Mensual */}
-        <div className="bg-gray-50/50 p-5 rounded-xl border border-gray-100 space-y-4">
-          <h3 className="text-sm font-bold text-primaryBlue uppercase tracking-wider">Créditos Mensuales</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mora ($/periodo)</label>
-              <input
-                type="number"
-                min={0}
-                value={numberInputDisplay(formData.moraMensual)}
-                onChange={(e) => setFormData((prev) => ({ ...prev, moraMensual: parseNumberInput(e.target.value) }))}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                disabled={loading}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Días gracia</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={numberInputDisplay(formData.diasGraciaMensual)}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, diasGraciaMensual: parseNumberInput(e.target.value) }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tope mora (veces)</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={numberInputDisplay(formData.topeMoraMensual)}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, topeMoraMensual: parseNumberInput(e.target.value) }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all bg-white"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-            <p className="text-xs text-infoBlue font-medium">
-              {asNumber(formData.diasGraciaMensual) === 0
-                ? 'La mora se aplica inmediatamente al día siguiente del vencimiento.'
-                : `La mora se aplica a partir del ${asNumber(formData.diasGraciaMensual) + 1}.º día de atraso.`}
-            </p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <ConfigMoraSection
+          title="Créditos Diarios"
+          mora={formData.moraDiaria}
+          gracia={formData.diasGraciaDiaria}
+          tope={formData.topeMoraDiaria}
+          onChangeMora={(v) => setFormData((p) => ({ ...p, moraDiaria: v }))}
+          onChangeGracia={(v) => setFormData((p) => ({ ...p, diasGraciaDiaria: v }))}
+          onChangeTope={(v) => setFormData((p) => ({ ...p, topeMoraDiaria: v }))}
+          disabled={loading}
+        />
+        <ConfigMoraSection
+          title="Créditos Semanales"
+          mora={formData.moraSemanal}
+          gracia={formData.diasGraciaSemanal}
+          tope={formData.topeMoraSemanal}
+          onChangeMora={(v) => setFormData((p) => ({ ...p, moraSemanal: v }))}
+          onChangeGracia={(v) => setFormData((p) => ({ ...p, diasGraciaSemanal: v }))}
+          onChangeTope={(v) => setFormData((p) => ({ ...p, topeMoraSemanal: v }))}
+          disabled={loading}
+        />
+        <ConfigMoraSection
+          title="Créditos Mensuales"
+          mora={formData.moraMensual}
+          gracia={formData.diasGraciaMensual}
+          tope={formData.topeMoraMensual}
+          onChangeMora={(v) => setFormData((p) => ({ ...p, moraMensual: v }))}
+          onChangeGracia={(v) => setFormData((p) => ({ ...p, diasGraciaMensual: v }))}
+          onChangeTope={(v) => setFormData((p) => ({ ...p, topeMoraMensual: v }))}
+          disabled={loading}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Intereses */}
         <div className="bg-gray-50/50 p-5 rounded-xl border border-gray-100 space-y-4">
           <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wider">Tasas de Interés</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tasa Diaria (%)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Diaria (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -195,7 +145,7 @@ export const ConfiguracionSistemaForm = ({ initial }: { initial: ConfiguracionSi
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tasa Semanal (%)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Semanal (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -207,7 +157,7 @@ export const ConfiguracionSistemaForm = ({ initial }: { initial: ConfiguracionSi
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tasa Mensual (%)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Mensual (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -221,7 +171,6 @@ export const ConfiguracionSistemaForm = ({ initial }: { initial: ConfiguracionSi
           </div>
         </div>
 
-        {/* Calendario */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wider">Calendario</h3>
           <div className="space-y-3">
@@ -249,32 +198,30 @@ export const ConfiguracionSistemaForm = ({ initial }: { initial: ConfiguracionSi
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-6">
-          <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wider">Política de Bloqueo de Cuenta</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bloqueo (minutos)</label>
-              <input
-                type="number"
-                min={0}
-                value={numberInputDisplay(formData.lockoutMinutes)}
-                onChange={(e) => setFormData((prev) => ({ ...prev, lockoutMinutes: parseNumberInput(e.target.value) }))}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all"
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Intentos máximos permitidos</label>
-              <input
-                type="number"
-                min={0}
-                value={numberInputDisplay(formData.lockoutMaxFailedAttempts)}
-                onChange={(e) => setFormData((prev) => ({ ...prev, lockoutMaxFailedAttempts: parseNumberInput(e.target.value) }))}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all"
-                disabled={loading}
-              />
-            </div>
+      <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-6">
+        <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wider">Política de Bloqueo de Cuenta</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bloqueo (minutos)</label>
+            <input
+              type="number"
+              min={0}
+              value={numberInputDisplay(formData.lockoutMinutes)}
+              onChange={(e) => setFormData((prev) => ({ ...prev, lockoutMinutes: parseNumberInput(e.target.value) }))}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all"
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Intentos máximos permitidos</label>
+            <input
+              type="number"
+              min={0}
+              value={numberInputDisplay(formData.lockoutMaxFailedAttempts)}
+              onChange={(e) => setFormData((prev) => ({ ...prev, lockoutMaxFailedAttempts: parseNumberInput(e.target.value) }))}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryBlue/20 focus:border-primaryBlue outline-none transition-all"
+              disabled={loading}
+            />
           </div>
         </div>
       </div>

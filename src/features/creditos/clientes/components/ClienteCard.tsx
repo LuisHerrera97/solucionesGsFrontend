@@ -1,6 +1,8 @@
 import { Building2, MapPin, Pencil, Trash2 } from 'lucide-react';
 import type { Cliente } from '../../types/types';
 
+import { EstatusCliente } from '../../../../shared/constants/dominio';
+
 type ClienteCardProps = {
   cliente: Cliente;
   onEditar?: () => void;
@@ -21,9 +23,9 @@ export const ClienteCard = ({ cliente, onEditar, onEliminar, puedeEditar, puedeE
         </div>
         <span
           className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-            cliente.estatus === 'Activo'
+            cliente.estatus === EstatusCliente.ACTIVO
               ? 'bg-emerald-50 text-emerald-700'
-              : cliente.estatus === 'Inactivo'
+              : cliente.estatus === EstatusCliente.INACTIVO
                 ? 'bg-rose-50 text-rose-700'
                 : 'bg-amber-50 text-amber-800'
           }`}

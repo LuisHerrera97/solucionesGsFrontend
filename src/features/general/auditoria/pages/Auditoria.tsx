@@ -1,65 +1,29 @@
-import { useEffect, useMemo, useState } from 'react';
 import StatusPanel from '../../../../shared/components/StatusPanel';
-import { useAuditoriaFiltrosOpcionesQuery, useAuditoriaQuery } from '../hooks/auditoriaHooks';
-
-const PAGE_SIZE = 50;
+import { useAuditoriaPage } from '../hooks/useAuditoriaPage';
 
 const Auditoria = () => {
-  const [desde, setDesde] = useState(() => new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
-  const [hasta, setHasta] = useState(() => new Date().toISOString().slice(0, 10));
-  const [accion, setAccion] = useState('');
-  const [entidadTipo, setEntidadTipo] = useState('');
-  const [page, setPage] = useState(1);
-
-  const rangoUtc = useMemo(() => {
-    const desdeUtc = new Date(`${desde}T00:00:00.000Z`).toISOString();
-    const hastaUtc = new Date(`${hasta}T23:59:59.999Z`).toISOString();
-    return { desdeUtc, hastaUtc };
-  }, [desde, hasta]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [desde, hasta, accion, entidadTipo]);
-
-  const filtrosOpcionesQuery = useAuditoriaFiltrosOpcionesQuery(rangoUtc);
-
-  useEffect(() => {
-    const data = filtrosOpcionesQuery.data;
-    if (!data) return;
-    setAccion((prev) => (prev && data.acciones.some((a) => a.valor === prev) ? prev : ''));
-    setEntidadTipo((prev) => (prev && data.entidadesTipo.some((a) => a.valor === prev) ? prev : ''));
-  }, [filtrosOpcionesQuery.data]);
-
-  const params = useMemo(
-    () => ({
-      ...rangoUtc,
-      accion: accion.trim() || undefined,
-      entidadTipo: entidadTipo.trim() || undefined,
-      page,
-      pageSize: PAGE_SIZE,
-    }),
-    [rangoUtc, accion, entidadTipo, page],
-  );
-
-  const auditoriaQuery = useAuditoriaQuery(params);
-  const eventos = auditoriaQuery.data ?? [];
-  const haySiguiente = eventos.length === PAGE_SIZE;
-
-  const etiquetaAccion = useMemo(() => {
-    const m = new Map<string, string>();
-    filtrosOpcionesQuery.data?.acciones.forEach((o) => m.set(o.valor, o.etiqueta));
-    return m;
-  }, [filtrosOpcionesQuery.data]);
-
-  const etiquetaEntidadTipo = useMemo(() => {
-    const m = new Map<string, string>();
-    filtrosOpcionesQuery.data?.entidadesTipo.forEach((o) => m.set(o.valor, o.etiqueta));
-    return m;
-  }, [filtrosOpcionesQuery.data]);
-
-  const opcionesAccion = filtrosOpcionesQuery.data?.acciones ?? [];
-  const opcionesEntidad = filtrosOpcionesQuery.data?.entidadesTipo ?? [];
-  const filtrosCargando = filtrosOpcionesQuery.isLoading;
+  const {
+    desde,
+    setDesde,
+    hasta,
+    setHasta,
+    accion,
+    setAccion,
+    entidadTipo,
+    setEntidadTipo,
+    page,
+    setPage,
+    filtrosOpcionesQuery,
+    auditoriaQuery,
+    eventos,
+    haySiguiente,
+    etiquetaAccion,
+    etiquetaEntidadTipo,
+    opcionesAccion,
+    opcionesEntidad,
+    filtrosCargando,
+    PAGE_SIZE,
+  } = useAuditoriaPage();
 
   return (
     <div className="space-y-6">

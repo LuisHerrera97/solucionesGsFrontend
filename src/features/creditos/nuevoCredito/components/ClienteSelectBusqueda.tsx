@@ -34,7 +34,7 @@ export const ClienteSelectBusqueda = ({ value, onChange, onClienteEtiqueta, disa
 
   const { data: opciones = [], isFetching } = useQuery({
     queryKey: ['creditos', 'clientes', 'selector', buscarApi ?? ''],
-    queryFn: () => obtenerClientes({ page: 1, pageSize: PAGE_SIZE, buscar: buscarApi }).then((r: any) => r.items),
+    queryFn: () => obtenerClientes({ page: 1, pageSize: PAGE_SIZE, buscar: buscarApi }).then((r) => r.items),
     staleTime: 30_000,
   });
 
@@ -164,7 +164,7 @@ export const ClienteSelectBusqueda = ({ value, onChange, onClienteEtiqueta, disa
               </li>
             )}
             {!isFetching &&
-              opciones.map((c: any) => (
+              opciones.map((c: Cliente) => (
                 <li key={c.id} role="option" aria-selected={c.id === value}>
                   <button
                     type="button"

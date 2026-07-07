@@ -1,14 +1,13 @@
 import type { NumberInputValue } from '../../../../shared/utils/numberInput';
 import { asNumber } from '../../../../shared/utils/numberInput';
+import { TipoCredito } from '../../../../shared/constants/dominio';
 import { NuevoCreditoResumen } from './NuevoCreditoResumen';
-
-type TipoCredito = 'diario' | 'semanal' | 'mensual';
 
 type ConfirmarNuevoCreditoModalProps = {
   open: boolean;
   /** Texto del selector de cliente (nombre, negocio, etc.) */
   clienteNombre: string;
-  tipo: TipoCredito;
+  tipo: 'diario' | 'semanal' | 'mensual';
   monto: NumberInputValue;
   plazo: NumberInputValue;
   tasa: number;
@@ -20,12 +19,12 @@ type ConfirmarNuevoCreditoModalProps = {
   onConfirm: () => void;
 };
 
-const tipoEtiqueta = (tipo: TipoCredito) =>
-  tipo === 'diario' ? 'Crédito diario' : tipo === 'semanal' ? 'Crédito semanal' : 'Crédito mensual';
+const tipoEtiqueta = (tipo: 'diario' | 'semanal' | 'mensual') =>
+  tipo === TipoCredito.DIARIO ? 'Crédito diario' : tipo === TipoCredito.SEMANAL ? 'Crédito semanal' : 'Crédito mensual';
 
-const plazoEtiqueta = (tipo: TipoCredito, plazo: NumberInputValue) => {
+const plazoEtiqueta = (tipo: 'diario' | 'semanal' | 'mensual', plazo: NumberInputValue) => {
   const n = asNumber(plazo);
-  const unidad = tipo === 'diario' ? 'días hábiles' : tipo === 'semanal' ? 'semanas' : 'meses';
+  const unidad = tipo === TipoCredito.DIARIO ? 'días hábiles' : tipo === TipoCredito.SEMANAL ? 'semanas' : 'meses';
   return `${n.toLocaleString()} ${unidad}`;
 };
 

@@ -1,33 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { Lock } from 'lucide-react';
-import { useAuth } from '../../context/useAuth';
-import { getErrorMessage } from '../../../../shared/utils/getErrorMessage';
 import { LoginBrandPanel } from '../components/LoginBrandPanel';
 import { LoginForm } from '../components/LoginForm';
-
+import { useLoginPage } from '../hooks/useLoginPage';
 
 const LoginPage = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [usuarioAcceso, setUsuarioAcceso] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [loading, setLoading] = useState(false);
-
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await login({ usuarioAcceso, contrasena });
-      navigate('/', { replace: true });
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'No fue posible iniciar sesión'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { usuarioAcceso, setUsuarioAcceso, contrasena, setContrasena, loading, onSubmit } = useLoginPage();
 
   return (
     <div className="min-h-screen bg-softBeige">
@@ -55,13 +32,9 @@ const LoginPage = () => {
               onChangeContrasena={setContrasena}
               onSubmit={onSubmit}
             />
-
-
           </div>
         </div>
       </div>
-
-
     </div>
   );
 };

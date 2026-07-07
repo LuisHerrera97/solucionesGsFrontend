@@ -1,7 +1,6 @@
-import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AbonarFichaCreditoRequest, PenalizarFichaCreditoRequest } from '../../types/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { PenalizarFichaCreditoRequest } from '../../types/types';
 import {
-  abonarFicha,
   actualizarObservacion,
   condonarInteres,
   condonarInteresMonto,
@@ -10,8 +9,11 @@ import {
   reestructurarCredito,
   reversarMovimiento,
 } from '../../api';
+import { useAbonarFichaCreditoMutation } from '../../creditos/hooks/creditosHooks';
 
-const invalidateTrasFichaCredito = async (queryClient: QueryClient, creditoId: string) => {
+export { useAbonarFichaCreditoMutation };
+
+const invalidateTrasFichaCredito = async (queryClient: ReturnType<typeof useQueryClient>, creditoId: string) => {
   await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos'] });
   await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos', creditoId] });
   await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos', creditoId, 'movimientos'] });
@@ -25,16 +27,6 @@ export const useMovimientosByCreditoQuery = (id?: string) => {
     queryKey: ['creditos', 'creditos', id, 'movimientos'],
     queryFn: () => obtenerMovimientosCredito(id as string),
     enabled: Boolean(id),
-  });
-};
-
-export const useAbonarFichaCreditoMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: AbonarFichaCreditoRequest) => abonarFicha(payload),
-    onSuccess: async (_data, variables) => {
-      await invalidateTrasFichaCredito(queryClient, variables.creditoId);
-    },
   });
 };
 

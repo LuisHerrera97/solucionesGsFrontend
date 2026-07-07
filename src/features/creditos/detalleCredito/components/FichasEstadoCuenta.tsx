@@ -1,29 +1,35 @@
 import { useMemo } from 'react';
 import { CheckCircle, Calculator } from 'lucide-react';
 import type { CreditoApi } from '../../api';
+import type { Ficha } from '../../types/types';
 import { calendarDayKeyFromApi, formatCalendarDateFromApi, localCalendarDayKey } from '../../../../shared/date/calendarDate';
+import { saldoPendienteFicha } from '../../../../shared/creditos/fichasPagoOrden';
+import { useDetalleCreditoContext } from '../hooks/useDetalleCreditoContext';
+import { MedioPago } from '../../../../shared/constants/dominio';
 
 type FichasEstadoCuentaProps = {
   fichas: CreditoApi['fichas'];
   /** Ficha mínima no pagada (solo referencia visual “orden sugerido”). */
   fichaSiguienteNum?: number;
-  onPagarFicha?: (numFicha: number, pendiente: number, fechaFicha: string) => void;
-  onAbonar?: (numFicha: number, pendiente: number, fechaFicha: string) => void;
-  onPenalizar?: (numFicha: number, pendiente: number, fechaFicha: string) => void;
-  onCondonarInteres?: (numFicha: number) => void;
 };
 
 export const FichasEstadoCuenta = ({
   fichas,
   fichaSiguienteNum,
-  onPagarFicha,
-  onAbonar,
-  onPenalizar,
-  onCondonarInteres,
 }: FichasEstadoCuentaProps) => {
+  const { 
+    setModalPago, 
+    setModalType, 
+    setMonto, 
+    setMora, 
+    setMedioPago, 
+    handleCalcularMora, 
+    handleCondonar 
+  } = useDetalleCreditoContext();
+
   const totales = useMemo(() => {
     return fichas.reduce(
-      (acc: { capital: number; interes: number; mora: number; abono: number; saldo: number }, f: any) => {
+      (acc: { capital: number; interes: number; mora: number; abono: number; saldo: number }, f: Ficha) => {
         const moraAcum = f.moraAcumulada ?? 0;
         const abonoAcum = f.abonoAcumulado ?? 0;
 
@@ -81,9 +87,9 @@ export const FichasEstadoCuenta = ({
         En cada ficha pendiente puedes usar las acciones permitidas por tu perfil. El cobrador elige la ficha sobre la que opera.
       </p>
       <div className="grid grid-cols-1 gap-6 md:gap-4">
-        {fichas.map((ficha: any) => {
+        {fichas.map((ficha: Ficha) => {
           const fechaVencimiento = formatCalendarDateFromApi(ficha.fecha, { day: '2-digit', month: '2-digit', year: 'numeric' });
-          const totalALiquidar = ficha.total;
+          const totalALiquidar = saldoPendienteFicha(ficha);
           const fichaAplicada = ficha.aplicado ?? ficha.pagada;
           const montoFichaPagada = (ficha.capital ?? 0) + (ficha.interes ?? 0) + (ficha.moraAcumulada ?? 0);
 
@@ -93,10 +99,6 @@ export const FichasEstadoCuenta = ({
             !!ficha.fecha &&
             calendarDayKeyFromApi(ficha.fecha) !== '' &&
             calendarDayKeyFromApi(ficha.fecha) < localCalendarDayKey();
-
-          const hayAccionesPendiente =
-            !fichaAplicada &&
-            (Boolean(onPagarFicha) || Boolean(onAbonar) || Boolean(onPenalizar) || (ficha.interes > 0 && Boolean(onCondonarInteres)));
 
           return (
             <div
@@ -191,42 +193,52 @@ export const FichasEstadoCuenta = ({
                   </div>
                 </div>
 
-                {hayAccionesPendiente && (
+                {!fichaAplicada && (
                   <div className="flex flex-col gap-2 pt-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {Boolean(onPagarFicha) && (
-                        <button
-                          type="button"
-                          className="btn btn-primary py-3 shadow-lg shadow-primaryBlue/20 transform active:scale-95 transition-all text-sm font-bold"
-                          onClick={() => onPagarFicha?.(ficha.num, totalALiquidar, ficha.fecha)}
-                        >
-                          Pagar Ficha
-                        </button>
-                      )}
-                      {Boolean(onAbonar) && (
-                        <button
-                          type="button"
-                          className="btn btn-light py-3 border-primaryBlue text-primaryBlue hover:bg-blue-50 shadow-sm transform active:scale-95 transition-all text-sm font-bold"
-                          onClick={() => onAbonar?.(ficha.num, totalALiquidar, ficha.fecha)}
-                        >
-                          Abonar
-                        </button>
-                      )}
-                    </div>
-                    {Boolean(onPenalizar) && (
                       <button
                         type="button"
-                        className="btn btn-light py-3 border-amber-300 text-amber-700 hover:bg-amber-50 shadow-sm transform active:scale-95 transition-all text-sm font-bold"
-                        onClick={() => onPenalizar?.(ficha.num, totalALiquidar, ficha.fecha)}
+                        className="btn btn-primary py-3 shadow-lg shadow-primaryBlue/20 transform active:scale-95 transition-all text-sm font-bold"
+                        onClick={() => {
+                          setModalPago({ numFicha: ficha.num, pendiente: totalALiquidar });
+                          setModalType('pago');
+                          setMonto(totalALiquidar);
+                          setMora(handleCalcularMora(ficha.fecha));
+                          setMedioPago(MedioPago.EFECTIVO);
+                        }}
                       >
-                        Penalizar
+                        Pagar Ficha
                       </button>
-                    )}
-                    {ficha.interes > 0 && Boolean(onCondonarInteres) && (
+                      <button
+                        type="button"
+                        className="btn btn-light py-3 border-primaryBlue text-primaryBlue hover:bg-blue-50 shadow-sm transform active:scale-95 transition-all text-sm font-bold"
+                        onClick={() => {
+                          setModalPago({ numFicha: ficha.num, pendiente: totalALiquidar });
+                          setModalType('abono');
+                          setMonto(0);
+                          setMora(0);
+                          setMedioPago(MedioPago.EFECTIVO);
+                        }}
+                      >
+                        Abonar
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-light py-3 border-amber-300 text-amber-700 hover:bg-amber-50 shadow-sm transform active:scale-95 transition-all text-sm font-bold"
+                      onClick={() => {
+                        setModalPago({ numFicha: ficha.num, pendiente: 0 });
+                        setModalType('penalizacion');
+                        setMora(handleCalcularMora(ficha.fecha));
+                      }}
+                    >
+                      Penalizar
+                    </button>
+                    {ficha.interes > 0 && (
                       <button
                         type="button"
                         className="btn btn-light w-full py-2.5 border-amber-200 text-amber-700 hover:bg-amber-50"
-                        onClick={() => onCondonarInteres?.(ficha.num)}
+                        onClick={() => handleCondonar(ficha.num)}
                       >
                         Condonar interés (${ficha.interes.toLocaleString()})
                       </button>

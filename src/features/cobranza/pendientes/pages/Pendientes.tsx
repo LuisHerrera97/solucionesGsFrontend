@@ -1,48 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { PendienteCobroDto } from '../../types/pendientes';
 import StatusPanel from '../../../../shared/components/StatusPanel';
-import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
-import { usePendientesQuery } from '../hooks/pendientesHooks';
-import { useCobranzaZonaFiltro } from '../../cobranza/hooks/useCobranzaZonaFiltro';
+import { CobranzaZonaFiltroPanel } from '../../../../shared/cobranza/CobranzaZonaFiltroPanel';
 import { PendienteCard } from '../components/PendienteCard';
 import { PendientesHeader } from '../components/PendientesHeader';
-import { CobranzaZonaFiltroPanel } from '../../cobranza/components/CobranzaZonaFiltroPanel';
-import { useAuth } from '../../../auth/context/useAuth';
-
-const PAGE_SIZE = 25;
+import { usePendientesPage } from '../hooks/usePendientesPage';
 
 const Pendientes = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const zonaCtx = useCobranzaZonaFiltro('PENDIENTES_TODAS_ZONAS');
-
-  const [busqueda, setBusqueda] = useState('');
-  const busquedaDebounced = useDebouncedValue(busqueda);
-  const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    setPage(1);
-  }, [busquedaDebounced, zonaCtx.zonaFiltro]);
-
-  const pendientesQuery = usePendientesQuery({
-    busqueda: busquedaDebounced || undefined,
+  const {
+    user,
+    zonaCtx,
+    busqueda,
+    setBusqueda,
     page,
-    pageSize: PAGE_SIZE,
-    zonaId: zonaCtx.zonaIdParam,
-  });
-
-  const listado = pendientesQuery.data;
-  const pendientes = useMemo(() => listado?.items ?? [], [listado?.items]);
-  const totalCount = listado?.totalCount ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-  const irAlCredito = useCallback(
-    (item: PendienteCobroDto) => {
-      navigate(`/creditos/${item.creditoId}`);
-    },
-    [navigate],
-  );
+    setPage,
+    pendientesQuery,
+    pendientes,
+    totalCount,
+    totalPages,
+    pageSize,
+    irAlCredito,
+  } = usePendientesPage();
 
   return (
     <div className="space-y-6">
@@ -69,10 +45,10 @@ const Pendientes = () => {
         ))}
       </div>
 
-      {totalCount > PAGE_SIZE && (
+      {totalCount > pageSize && (
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between border-t border-gray-100 pt-4">
           <p className="text-xs text-textMuted">
-            Mostrando {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalCount)} de {totalCount}
+            Mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} de {totalCount}
           </p>
           <div className="flex gap-2">
             <button type="button" className="btn btn-light text-sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>

@@ -1,0 +1,60 @@
+---
+description: Estructura por features y sub-features
+globs: src/features/**/*
+alwaysApply: false
+---
+
+# Arquitectura por features
+
+## Estructura estándar
+
+```
+src/features/{dominio}/{subFeature}/
+  pages/        → componente de página (solo presentación)
+  hooks/        → lógica de pantalla y datos
+  components/   → UI específica del sub-feature
+  context/      → solo si el árbol de componentes lo requiere (ej. detalleCredito)
+
+src/features/{dominio}/
+  api.ts        → llamadas HTTP del dominio
+  types/        → tipos del dominio
+```
+
+## Dominios y sub-features
+
+| Dominio | Sub-features |
+|---------|--------------|
+| `auth` | `login` (+ `context/`, `utils/` a nivel dominio) |
+| `creditos` | `clientes`, `creditos`, `dashboard`, `detalleCredito`, `movimientos`, `nuevoCredito` |
+| `cobranza` | `cobranza`, `pendientes` |
+| `general` | `auditoria`, `configuracion`, `feriados`, `zonas` |
+| `home` | `dashboard` |
+| `seguridad` | `usuarios`, `perfiles`, `permisos`, `elementosSistema` |
+
+## Capas transversales
+
+| Ruta | Contenido |
+|------|-----------|
+| `src/core/http/` | `ApiService`, `apiInstance`, `unwrapApiResponse`, adaptador de errores |
+| `src/core/config/apiEndpoints.ts` | URLs de API (única fuente de endpoints) |
+| `src/shared/components/` | `StatusPanel`, `ConfirmDialog`, `ModalShell`, `Spinner`, etc. |
+| `src/shared/hooks/` | `useDebouncedValue`, `usePaginationForFilters` |
+| `src/shared/constants/dominio.ts` | Enums y constantes de negocio (`MedioPago`, `EstatusCliente`, …) |
+| `src/shared/cobranza/` | Filtro por zona, agrupación de movimientos |
+| `src/shared/creditos/` | Cálculo de mora, pago de fichas vigentes, estado de cuenta |
+| `src/shared/ticket/` | Impresión de tickets |
+| `src/shared/utils/` | `url`, `numberInput`, `getErrorMessage` |
+| `src/shared/date/` | Fechas de calendario (sin timezone implícito) |
+
+## Reglas
+
+- Componentes de un sub-feature viven en `{subFeature}/components/`, **no** en `features/{dominio}/components/`.
+- Lógica reutilizable entre dominios → `src/shared/`.
+- Rutas nuevas en `src/routes/AppRouter.tsx` dentro de `ProtectedRoute` + `Layout`.
+- Acoplamiento entre dominios (ej. `cobranza` → hooks de `creditos`) está permitido de forma puntual; si crece, extraer a `shared/`.
+
+## Prohibido
+
+- Nuevos `*Service.ts`.
+- Endpoints hardcodeados fuera de `apiEndpoints.ts`.
+- Duplicar pantallas o componentes en rutas legacy del dominio.

@@ -1,19 +1,10 @@
-import { useMemo, useState } from 'react';
-import type { Guid } from '../../types/types';
 import StatusPanel from '../../../../shared/components/StatusPanel';
 import { PermisosEditor } from '../components/PermisosEditor';
 import { PermisosHeader } from '../components/PermisosHeader';
-import { useMenuPerfilQuery } from '../hooks/permisosHooks';
-import { usePerfilesQuery } from '../../perfiles/hooks/perfilesHooks';
+import { usePermisosPage } from '../hooks/usePermisosPage';
 
 const Permisos = () => {
-  const perfilesQuery = usePerfilesQuery();
-
-  const perfiles = useMemo(() => perfilesQuery.data ?? [], [perfilesQuery.data]);
-  const [perfilId, setPerfilId] = useState<Guid | ''>('');
-  const selectedPerfilId = (perfilId || perfiles[0]?.id || '') as Guid | '';
-
-  const menuQuery = useMenuPerfilQuery(selectedPerfilId);
+  const { perfilesQuery, perfiles, selectedPerfilId, setPerfilId, menuQuery } = usePermisosPage();
 
   return (
     <div className="space-y-6">

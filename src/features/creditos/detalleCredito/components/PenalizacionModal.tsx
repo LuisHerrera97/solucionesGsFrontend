@@ -1,29 +1,22 @@
 import { X } from 'lucide-react';
-import { asNumber, numberInputDisplay, parseNumberInput, type NumberInputValue } from '../../../../shared/utils/numberInput';
+import { asNumber, numberInputDisplay, parseNumberInput } from '../../../../shared/utils/numberInput';
+import { useDetalleCreditoContext } from '../hooks/useDetalleCreditoContext';
 
-type PenalizacionModalProps = {
-  open: boolean;
-  numFicha: number;
-  mora: NumberInputValue;
-  saving: boolean;
-  onClose: () => void;
-  onChangeMora: (value: NumberInputValue) => void;
-  onConfirm: () => void;
-};
+export const PenalizacionModal = () => {
+  const {
+    modalPago,
+    setModalPago,
+    modalType,
+    mora,
+    setMora,
+    savingFicha,
+    handlePenalizar,
+  } = useDetalleCreditoContext();
 
-export const PenalizacionModal = ({
-  open,
-  numFicha,
-  mora,
-  saving,
-  onClose,
-  onChangeMora,
-  onConfirm,
-}: PenalizacionModalProps) => {
-  if (!open) return null;
+  if (!modalPago || modalType !== 'penalizacion') return null;
 
   const montoN = asNumber(mora);
-  const canConfirm = montoN > 0 && !saving;
+  const canConfirm = montoN > 0 && !savingFicha;
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-all animate-in fade-in duration-300 overflow-y-auto">
@@ -31,7 +24,7 @@ export const PenalizacionModal = ({
         
         <div className="relative pt-8 px-8 pb-4">
           <button 
-            onClick={onClose} 
+            onClick={() => setModalPago(null)} 
             className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-all hover:rotate-90 active:scale-90"
           >
             <X size={18} />
@@ -39,7 +32,7 @@ export const PenalizacionModal = ({
           
           <div className="flex flex-col items-center text-center">
             <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Registrar Penalización</span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Ficha #{numFicha}</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Ficha #{modalPago.numFicha}</h2>
           </div>
         </div>
 
@@ -54,7 +47,7 @@ export const PenalizacionModal = ({
                 className="w-full bg-white border-2 border-slate-100 rounded-2xl py-5 pl-10 pr-6 text-xl font-black text-slate-900 focus:border-amber-400/50 focus:ring-[6px] focus:ring-amber-400/10 transition-all outline-none placeholder:text-slate-200" 
                 min={0} 
                 value={numberInputDisplay(mora)} 
-                onChange={(e) => onChangeMora(parseNumberInput(e.target.value))} 
+                onChange={(e) => setMora(parseNumberInput(e.target.value))} 
                 onFocus={(e) => e.target.select()}
                 placeholder="0.00"
                 autoFocus
@@ -68,16 +61,16 @@ export const PenalizacionModal = ({
             type="button" 
             className="w-full py-4 rounded-2xl bg-amber-600 text-white text-xs font-black uppercase tracking-widest hover:bg-amber-700 transition-all shadow-xl shadow-amber-500/30 disabled:opacity-30 active:scale-[0.98] group relative overflow-hidden" 
             disabled={!canConfirm}
-            onClick={onConfirm}
+            onClick={handlePenalizar}
           >
-            <span className="relative z-10">{saving ? 'Procesando...' : 'Aplicar Penalización'}</span>
+            <span className="relative z-10">{savingFicha ? 'Procesando...' : 'Aplicar Penalización'}</span>
             <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           </button>
           
           <button 
             type="button" 
             className="w-full py-1 mt-3 text-[10px] font-black text-slate-300 hover:text-slate-500 transition-colors uppercase tracking-[0.3em]" 
-            onClick={onClose}
+            onClick={() => setModalPago(null)}
           >
             Cerrar
           </button>

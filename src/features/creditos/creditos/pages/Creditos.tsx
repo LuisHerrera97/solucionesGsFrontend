@@ -1,111 +1,25 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import StatusPanel from '../../../../shared/components/StatusPanel';
-import { useAbonarFichasVigentesCreditoMutation, useCreditoByIdQuery, useCreditosQuery } from '../hooks/creditosHooks';
 import { CreditoCard } from '../components/CreditoCard';
 import { CreditosHeader } from '../components/CreditosHeader';
-import { useCobranzaZonaFiltro } from '../../../cobranza/cobranza/hooks/useCobranzaZonaFiltro';
-import { CobranzaZonaFiltroPanel } from '../../../cobranza/cobranza/components/CobranzaZonaFiltroPanel';
-import { useAuth } from '../../../auth/context/useAuth';
-import { asNumber, numberInputDisplay, parseNumberInput, type NumberInputValue } from '../../../../shared/utils/numberInput';
-import { getErrorMessage } from '../../../../shared/utils/getErrorMessage';
-import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
-import { ModalShell } from '../../../../shared/components/ModalShell';
-import { fichasNoPagadasOrdenadasParaPagoMultiples } from '../../../../shared/creditos/fichasPagoOrden';
-
-const PERM_CREDITOS_TODAS_ZONAS = 'CREDITO_LISTA_TODAS_ZONAS';
+import { CobranzaZonaFiltroPanel } from '../../../../shared/cobranza/CobranzaZonaFiltroPanel';
+import { useCreditosPage } from '../hooks/useCreditosPage';
+import { PagoFichaModal } from '../../../../shared/creditos/PagoFichaModal';
 
 const Creditos = () => {
-  const navigate = useNavigate();
-  const { user, canBoton } = useAuth();
-  const puedePagarFichasVigentesListado = canBoton('CREDITO_PAGAR_FICHA') || canBoton('CREDITO_ABONAR_FICHA');
-
-  const [page, setPage] = useState(1);
-  const pageSize = 50;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [creditoPagoSeleccionado, setCreditoPagoSeleccionado] = useState<{ id: string; folio: string } | null>(null);
-  const [cantidadFichasPago, setCantidadFichasPago] = useState<NumberInputValue>(1);
-  const [medioPago, setMedioPago] = useState<'Efectivo' | 'Transferencia' | 'Mixto'>('Efectivo');
-  const [montoEfectivo, setMontoEfectivo] = useState<NumberInputValue>(0);
-  const [montoTransferencia, setMontoTransferencia] = useState<NumberInputValue>(0);
-  const [confirmarPagoOpen, setConfirmarPagoOpen] = useState(false);
-
   const {
-    puedeElegirZona,
-    zonaFiltro,
-    setZonaFiltro,
-    zonaIdParam,
-    zonas,
-    zonasLoading,
-    esZonaDelUsuario,
-  } = useCobranzaZonaFiltro(PERM_CREDITOS_TODAS_ZONAS);
-
-  const creditosQuery = useCreditosQuery({ searchTerm, page, pageSize, zonaId: zonaIdParam });
-  const abonarFichasVigentesMutation = useAbonarFichasVigentesCreditoMutation();
-  const creditoPagoDetalleQuery = useCreditoByIdQuery(creditoPagoSeleccionado?.id);
-
-  const creditos = creditosQuery.data ?? [];
-  const canGoNext = useMemo(() => creditos.length === pageSize, [creditos.length]);
-  const fichasVigentesPago = useMemo(
-    () => fichasNoPagadasOrdenadasParaPagoMultiples(creditoPagoDetalleQuery.data?.fichas ?? []),
-    [creditoPagoDetalleQuery.data?.fichas],
-  );
-  const maxFichasVigentes = fichasVigentesPago.length;
-  const cantidadFichasPagoN = Math.floor(asNumber(cantidadFichasPago));
-  const cantidadFichasValida = cantidadFichasPagoN > 0 && cantidadFichasPagoN <= maxFichasVigentes;
-  const montoPagoCalculado = useMemo(() => {
-    if (!cantidadFichasValida) return 0;
-    return fichasVigentesPago.slice(0, cantidadFichasPagoN).reduce((acc, ficha) => acc + (ficha.saldoPendiente ?? ficha.total ?? 0), 0);
-  }, [cantidadFichasPagoN, cantidadFichasValida, fichasVigentesPago]);
-  const totalMedioMixto = asNumber(montoEfectivo) + asNumber(montoTransferencia);
-  const diferenciaMixto = montoPagoCalculado - totalMedioMixto;
-  const medioValido = medioPago !== 'Mixto' || Math.abs(totalMedioMixto - montoPagoCalculado) <= 0.01;
-  const puedeConfirmarPagoFichas = Boolean(creditoPagoSeleccionado) && !abonarFichasVigentesMutation.isPending && cantidadFichasValida && montoPagoCalculado > 0 && medioValido;
-
-  const abrirModalPagarFichas = (creditoId: string, folio: string) => {
-    setCreditoPagoSeleccionado({ id: creditoId, folio });
-    setCantidadFichasPago(1);
-    setMedioPago('Efectivo');
-    setMontoEfectivo(0);
-    setMontoTransferencia(0);
-  };
-
-  const seleccionarMedioPago = (medio: 'Efectivo' | 'Transferencia' | 'Mixto') => {
-    setMedioPago(medio);
-    if (medio === 'Mixto') {
-      setMontoEfectivo(montoPagoCalculado);
-      setMontoTransferencia(0);
-    }
-  };
-
-  const cerrarModalPagarFichas = () => {
-    setCreditoPagoSeleccionado(null);
-    setCantidadFichasPago(1);
-    setMedioPago('Efectivo');
-    setMontoEfectivo(0);
-    setMontoTransferencia(0);
-    setConfirmarPagoOpen(false);
-  };
-
-  const handlePagarFichasVigentes = async () => {
-    if (!creditoPagoSeleccionado || !puedeConfirmarPagoFichas) return;
-    try {
-      await abonarFichasVigentesMutation.mutateAsync({
-        creditoId: creditoPagoSeleccionado.id,
-        cantidadFichas: cantidadFichasPagoN,
-        montoAbono: montoPagoCalculado,
-        medio: medioPago,
-        montoEfectivo: medioPago === 'Mixto' ? asNumber(montoEfectivo) : undefined,
-        montoTransferencia: medioPago === 'Mixto' ? asNumber(montoTransferencia) : undefined,
-      });
-      toast.success('Pago de fichas registrado');
-      cerrarModalPagarFichas();
-      setConfirmarPagoOpen(false);
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'No fue posible registrar el pago de fichas vigentes'));
-    }
-  };
+    navigate,
+    user,
+    puedePagarFichasVigentesListado,
+    page,
+    setPage,
+    searchTerm,
+    setSearchTerm,
+    zonaCtx,
+    creditosQuery,
+    pagoFichaHook,
+    creditos,
+    canGoNext,
+  } = useCreditosPage();
 
   return (
     <div className="space-y-6">
@@ -120,15 +34,15 @@ const Creditos = () => {
 
       <CobranzaZonaFiltroPanel
         user={user}
-        puedeElegirZona={puedeElegirZona}
-        zonas={zonas}
-        zonasLoading={zonasLoading}
-        zonaFiltro={zonaFiltro}
+        puedeElegirZona={zonaCtx.puedeElegirZona}
+        zonas={zonaCtx.zonas}
+        zonasLoading={zonaCtx.zonasLoading}
+        zonaFiltro={zonaCtx.zonaFiltro}
         onChangeZona={(val) => {
-          setZonaFiltro(val);
+          zonaCtx.setZonaFiltro(val);
           setPage(1);
         }}
-        esZonaDelUsuario={esZonaDelUsuario}
+        esZonaDelUsuario={zonaCtx.esZonaDelUsuario}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -153,7 +67,16 @@ const Creditos = () => {
             key={credito.id}
             credito={credito}
             onVerDetalles={() => navigate(`/creditos/${credito.id}`)}
-            onPagarFichas={puedePagarFichasVigentesListado ? () => abrirModalPagarFichas(credito.id, credito.folio) : undefined}
+            onPagarFichaVigente={
+              puedePagarFichasVigentesListado
+                ? () => pagoFichaHook.abrirModalPagoFicha(credito.id, credito.folio, 'vigente')
+                : undefined
+            }
+            onPagarFichaAtrasada={
+              puedePagarFichasVigentesListado
+                ? () => pagoFichaHook.abrirModalPagoFicha(credito.id, credito.folio, 'atrasada')
+                : undefined
+            }
           />
         ))}
         {!creditosQuery.isLoading && !creditosQuery.isError && creditos.length === 0 && (
@@ -161,158 +84,7 @@ const Creditos = () => {
         )}
       </div>
 
-      {creditoPagoSeleccionado && (
-        <ModalShell
-          open
-          onClose={cerrarModalPagarFichas}
-          title="Pagar fichas vigentes"
-          subtitle={creditoPagoSeleccionado.folio}
-          maxWidthClassName="max-w-md"
-          titleId="creditos-pago-fichas-modal-titulo"
-        >
-          <div className="space-y-4">
-            {creditoPagoDetalleQuery.isLoading && <StatusPanel variant="loading" title="Cargando crédito" message="Obteniendo fichas vigentes..." />}
-            {creditoPagoDetalleQuery.isError && <StatusPanel variant="error" title="No fue posible cargar el crédito" message="Intenta nuevamente." />}
-
-            {!creditoPagoDetalleQuery.isLoading && !creditoPagoDetalleQuery.isError && (
-              <>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-textDark">Cantidad de fichas a pagar</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-light px-3 py-2 flex items-center justify-center font-bold text-lg select-none border border-gray-200 hover:bg-gray-100 rounded-lg active:scale-95 transition-all"
-                      disabled={cantidadFichasPagoN <= 1}
-                      onClick={() => setCantidadFichasPago(Math.max(1, cantidadFichasPagoN - 1))}
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={Math.max(1, maxFichasVigentes)}
-                      className="input text-center font-semibold text-lg w-full border border-gray-200 rounded-lg focus:border-primaryBlue focus:ring-1 focus:ring-primaryBlue"
-                      value={numberInputDisplay(cantidadFichasPago)}
-                      onChange={(e) => {
-                        const val = parseNumberInput(e.target.value);
-                        const num = asNumber(val);
-                        if (num > maxFichasVigentes) {
-                          setCantidadFichasPago(maxFichasVigentes);
-                        } else {
-                          setCantidadFichasPago(val);
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-light px-3 py-2 flex items-center justify-center font-bold text-lg select-none border border-gray-200 hover:bg-gray-100 rounded-lg active:scale-95 transition-all"
-                      disabled={cantidadFichasPagoN >= maxFichasVigentes}
-                      onClick={() => setCantidadFichasPago(Math.min(maxFichasVigentes, cantidadFichasPagoN + 1))}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-xs btn-light py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-100 active:scale-95 transition-all px-2.5"
-                      onClick={() => setCantidadFichasPago(1)}
-                    >
-                      Mínimo (1)
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-xs btn-light py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-100 active:scale-95 transition-all px-2.5"
-                      disabled={maxFichasVigentes <= 1}
-                      onClick={() => setCantidadFichasPago(maxFichasVigentes)}
-                    >
-                      Máximo ({maxFichasVigentes})
-                    </button>
-                  </div>
-                  <p className="mt-2 text-xs text-textMuted">Vigentes disponibles: {maxFichasVigentes}</p>
-                  {!cantidadFichasValida && <p className="mt-1 text-xs text-red-600 font-medium">La cantidad no puede ser mayor a las fichas vigentes o menor a 1.</p>}
-                </div>
-
-                <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-textMuted">Monto a pagar</p>
-                  <p className="text-2xl font-bold text-textDark">${montoPagoCalculado.toLocaleString()}</p>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-sm font-medium text-textDark">Tipo de pago</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['Efectivo', 'Transferencia', 'Mixto'] as const).map((m) => (
-                      <button key={m} type="button" className={`btn ${medioPago === m ? 'btn-primary' : 'btn-light'}`} onClick={() => seleccionarMedioPago(m)}>
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {medioPago === 'Mixto' && (
-                  <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="mb-1 block text-sm font-medium text-textDark">Efectivo</label>
-                        <div className="relative">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-textMuted">$</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            className="input w-full pl-7"
-                            placeholder="0.00"
-                            value={numberInputDisplay(montoEfectivo)}
-                            onChange={(e) => setMontoEfectivo(parseNumberInput(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-sm font-medium text-textDark">Transferencia</label>
-                        <div className="relative">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-textMuted">$</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            className="input w-full pl-7"
-                            placeholder="0.00"
-                            value={numberInputDisplay(montoTransferencia)}
-                            onChange={(e) => setMontoTransferencia(parseNumberInput(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-textMuted">Total capturado: <span className="font-semibold text-textDark">${totalMedioMixto.toLocaleString()}</span></p>
-                      <p className={`text-xs ${medioValido ? 'text-emerald-600' : 'text-red-600'}`}>
-                        Diferencia: ${Math.abs(diferenciaMixto).toLocaleString()}
-                        {diferenciaMixto > 0 ? ' pendiente' : diferenciaMixto < 0 ? ' excedente' : ' exacto'}
-                      </p>
-                    </div>
-                    {!medioValido && <p className="col-span-2 text-xs text-red-600">La suma de efectivo y transferencia debe coincidir con el monto a pagar.</p>}
-                  </div>
-                )}
-
-                <button type="button" className="btn btn-primary w-full" disabled={!puedeConfirmarPagoFichas} onClick={() => setConfirmarPagoOpen(true)}>
-                  {abonarFichasVigentesMutation.isPending ? 'Procesando...' : 'Confirmar pago'}
-                </button>
-              </>
-            )}
-          </div>
-        </ModalShell>
-      )}
-      <ConfirmDialog
-        isOpen={confirmarPagoOpen}
-        title="Confirmar pago"
-        message={`¿Registrar pago de ${cantidadFichasPagoN || 0} ficha(s) por $${montoPagoCalculado.toLocaleString()} al crédito ${creditoPagoSeleccionado?.folio ?? '-'}?`}
-        confirmLabel="Pagar"
-        cancelLabel="Cancelar"
-        type="info"
-        loading={abonarFichasVigentesMutation.isPending}
-        onConfirm={() => void handlePagarFichasVigentes()}
-        onCancel={() => setConfirmarPagoOpen(false)}
-      />
+      <PagoFichaModal pagoHook={pagoFichaHook} titleId="creditos-pago-ficha-modal-titulo" />
     </div>
   );
 };

@@ -1,109 +1,43 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { getErrorMessage } from '../../../../shared/utils/getErrorMessage';
-import { asNumber, type NumberInputValue } from '../../../../shared/utils/numberInput';
-import { useAuth } from '../../../auth/context/useAuth';
-import { useCrearCreditoMutation } from '../hooks/nuevoCreditoHooks';
-import { useConfiguracionSistemaQuery } from '../../../general/configuracion/hooks/configuracionHooks';
 import { ConfirmarNuevoCreditoModal } from '../components/ConfirmarNuevoCreditoModal';
 import { NuevoCreditoForm } from '../components/NuevoCreditoForm';
 import { NuevoCreditoResumen } from '../components/NuevoCreditoResumen';
+import { useNuevoCreditoPage } from '../hooks/useNuevoCreditoPage';
 
 const NUEVO_CREDITO_FORM_ID = 'nuevo-credito-form';
 
 const NuevoCredito = () => {
-  const navigate = useNavigate();
-  const { canBoton } = useAuth();
-  const canCrear = canBoton('CREDITO_CREAR');
-
-  const configQuery = useConfiguracionSistemaQuery();
-
-  const config = configQuery.data;
-
-  const [clienteId, setClienteId] = useState('');
-  const [clienteNombre, setClienteNombre] = useState('');
-  const [monto, setMonto] = useState<NumberInputValue>(0);
-  const [plazo, setPlazo] = useState<NumberInputValue>(13);
-  const [tipo, setTipo] = useState<'diario' | 'semanal' | 'mensual'>('semanal');
-  const [permitirDomingo, setPermitirDomingo] = useState<boolean | null>(null);
-  const [aplicarFeriados, setAplicarFeriados] = useState<boolean | null>(null);
-  const [tasaManual, setTasaManual] = useState<number | null>(null);
-  const [observacion, setObservacion] = useState('');
-  const [confirmarOpen, setConfirmarOpen] = useState(false);
-  const selectedClienteId = clienteId;
-
-  const crearMutation = useCrearCreditoMutation();
-
-  const permitirDomingoValue = useMemo(() => {
-    const defaultValue = config ? !config.domingoInhabilDefault : false;
-    return permitirDomingo ?? defaultValue;
-  }, [permitirDomingo, config]);
-  const aplicarFeriadosValue = useMemo(() => {
-    const defaultValue = config ? config.aplicarFeriadosDefault : false;
-    return aplicarFeriados ?? defaultValue;
-  }, [aplicarFeriados, config]);
-
-  const ejecutarCreacion = useCallback(async () => {
-    const mNum = asNumber(monto);
-    const pNum = asNumber(plazo);
-    if (!selectedClienteId || mNum <= 0 || pNum <= 0) return;
-    try {
-      await crearMutation.mutateAsync({
-        clienteId: selectedClienteId,
-        monto: mNum,
-        plazo: pNum,
-        tipo,
-        permitirDomingo: permitirDomingoValue,
-        aplicarFeriados: aplicarFeriadosValue,
-        tasaManual: tasaManual ?? undefined,
-        observacion,
-      });
-      toast.success('Crédito creado');
-      setConfirmarOpen(false);
-      navigate('/creditos');
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'No fue posible crear el crédito'));
-    }
-  }, [
-    aplicarFeriadosValue,
-    crearMutation,
-    monto,
+  const {
     navigate,
-    observacion,
-    permitirDomingoValue,
+    canCrear,
+    clienteId,
+    setClienteId,
+    clienteNombre,
+    setClienteNombre,
+    monto,
+    setMonto,
     plazo,
-    selectedClienteId,
-    tasaManual,
+    setPlazo,
     tipo,
-  ]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const mNum = asNumber(monto);
-    const pNum = asNumber(plazo);
-    if (!selectedClienteId) {
-      toast.error('Selecciona un cliente');
-      return;
-    }
-    if (mNum <= 0) {
-      toast.error('Indica un monto mayor a cero');
-      return;
-    }
-    if (pNum <= 0) {
-      toast.error('Indica un plazo válido');
-      return;
-    }
-    setConfirmarOpen(true);
-  };
-
-  const tasaDefault = tipo === 'diario' ? (config?.tasaDiaria ?? 0) : (tipo === 'semanal' ? (config?.tasaSemanal ?? 0) : (config?.tasaMensual ?? 0));
-  const tasa = tasaManual ?? tasaDefault;
-  const montoNum = asNumber(monto);
-  const plazoNum = asNumber(plazo);
-  const interesTotal = Math.round(montoNum * tasa);
-  const total = montoNum + interesTotal;
-  const cuota = plazoNum > 0 ? Math.ceil(total / plazoNum) : 0;
+    setTipo,
+    permitirDomingoValue,
+    setPermitirDomingo,
+    aplicarFeriadosValue,
+    setAplicarFeriados,
+    tasaManual,
+    setTasaManual,
+    observacion,
+    setObservacion,
+    confirmarOpen,
+    setConfirmarOpen,
+    crearMutation,
+    tasaDefault,
+    tasa,
+    interesTotal,
+    total,
+    cuota,
+    ejecutarCreacion,
+    handleSubmit,
+  } = useNuevoCreditoPage();
 
   return (
     <div className="space-y-6">
@@ -119,7 +53,7 @@ const NuevoCredito = () => {
       <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
         <NuevoCreditoForm
           formId={NUEVO_CREDITO_FORM_ID}
-          selectedClienteId={selectedClienteId}
+          selectedClienteId={clienteId}
           monto={monto}
           plazo={plazo}
           tipo={tipo}
@@ -130,8 +64,8 @@ const NuevoCredito = () => {
           onChangeMonto={setMonto}
           onChangePlazo={setPlazo}
           onChangeTipo={setTipo}
-          onChangePermitirDomingo={(v) => setPermitirDomingo(v)}
-          onChangeAplicarFeriados={(v) => setAplicarFeriados(v)}
+          onChangePermitirDomingo={(v: boolean) => setPermitirDomingo(v)}
+          onChangeAplicarFeriados={(v: boolean) => setAplicarFeriados(v)}
           onSubmit={handleSubmit}
           submitting={crearMutation.isPending}
           tasaManual={tasaManual}
@@ -151,7 +85,7 @@ const NuevoCredito = () => {
               type="submit"
               form={NUEVO_CREDITO_FORM_ID}
               className="btn btn-primary"
-              disabled={!canCrear || crearMutation.isPending || !selectedClienteId}
+              disabled={!canCrear || crearMutation.isPending || !clienteId}
             >
               {crearMutation.isPending ? 'Creando...' : 'Crear Crédito'}
             </button>

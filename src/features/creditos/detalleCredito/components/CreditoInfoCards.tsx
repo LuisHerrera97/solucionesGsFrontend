@@ -1,5 +1,7 @@
 import type { CreditoApi } from '../../api';
 
+import { TipoCredito } from '../../../../shared/constants/dominio';
+
 type CreditoInfoCardsProps = {
   credito: CreditoApi;
   cuotasPagadas: number;
@@ -23,7 +25,7 @@ export const CreditoInfoCards = ({ credito, cuotasPagadas, cuotasTotales, saldoP
         <p className="text-xs uppercase text-textMuted tracking-wide">Crédito</p>
         <p className="text-lg font-semibold text-textDark mt-1">{credito.folio}</p>
         <p className="text-sm text-textMuted">
-          {credito.tipo === 'diario' ? 'Diario' : (credito.tipo === 'semanal' ? 'Semanal' : 'Mensual')} · {cuotasPagadas} de {cuotasTotales} fichas pagadas
+          {credito.tipo === TipoCredito.DIARIO ? 'Diario' : credito.tipo === TipoCredito.SEMANAL ? 'Semanal' : 'Mensual'} · {cuotasPagadas} de {cuotasTotales} fichas pagadas
         </p>
       </div>
       <div className="card">

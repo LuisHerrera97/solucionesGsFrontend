@@ -27,8 +27,10 @@ export const ConfirmDialog = ({
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
+  // Animación de entrada/salida del diálogo
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- montaje para transición CSS
       setMounted(true);
       const timer = setTimeout(() => setVisible(true), 10);
       return () => clearTimeout(timer);

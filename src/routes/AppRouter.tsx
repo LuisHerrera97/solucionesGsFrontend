@@ -38,16 +38,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/config"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ConfiguracionSistema />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/config" element={<Navigate to="/general/configuracion" replace />} />
       <Route
         path="/general/configuracion"
         element={
@@ -133,26 +124,8 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/seguridad/auditoria"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Auditoria />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/seguridad/feriados"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Feriados />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/seguridad/auditoria" element={<Navigate to="/general/auditoria" replace />} />
+      <Route path="/seguridad/feriados" element={<Navigate to="/general/feriados" replace />} />
 
       <Route
         path="/creditos/nuevo"

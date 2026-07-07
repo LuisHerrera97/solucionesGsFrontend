@@ -1,9 +1,9 @@
 import StatusPanel from '../../../../shared/components/StatusPanel';
 import { ConfiguracionSistemaForm } from '../components/ConfiguracionSistemaForm';
-import { useConfiguracionSistemaQuery } from '../hooks/configuracionHooks';
+import { useConfiguracionSistemaPage } from '../hooks/useConfiguracionSistemaPage';
 
 const ConfiguracionSistema = () => {
-  const configQuery = useConfiguracionSistemaQuery();
+  const { configQuery } = useConfiguracionSistemaPage();
 
   return (
     <div className="space-y-6">

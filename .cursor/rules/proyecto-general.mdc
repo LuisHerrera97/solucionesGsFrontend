@@ -1,0 +1,49 @@
+---
+description: Contexto general del frontend Financiera Soluciones
+alwaysApply: true
+---
+
+# Financiera Soluciones — Frontend
+
+Sistema web de créditos y cobranza (PWA). UI y mensajes al usuario en **español**.
+
+## Stack
+
+React 19 · TypeScript · Vite 7 · React Router 7 · TanStack Query 5 · Axios · Tailwind CSS 4 · Recharts · Lucide
+
+## Estructura de `src/`
+
+```
+src/
+  core/          → HTTP, endpoints, tipos de API
+  shared/        → UI, hooks y lógica reutilizable entre dominios
+  features/      → dominios de negocio (auth, creditos, cobranza, general, home, seguridad)
+  layout/        → Layout, Sidebar, Navbar
+  routes/        → AppRouter, ProtectedRoute
+```
+
+Convenciones detalladas en las demás reglas de `.cursor/rules/`.
+
+## Comandos
+
+| Comando | Uso |
+|---------|-----|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run typecheck` | Verificación TypeScript |
+| `npm run lint` | ESLint |
+| `npm run preview` | Vista previa del build |
+
+Ejecutar `npm run typecheck` y `npm run lint` al tocar tipos o imports.
+
+## Entorno
+
+- Variable: `VITE_API_URL` (ver `.env`; no commitear secretos).
+- Endpoints centralizados en `src/core/config/apiEndpoints.ts`.
+
+## Principios de cambio
+
+- Cambios mínimos y enfocados: no refactorizar código no relacionado.
+- Antes de escribir código nuevo, revisar convenciones del mismo sub-feature.
+- No crear `*Service.ts`; usar `{dominio}/api.ts`.
+- No duplicar archivos en rutas viejas (`features/{dominio}/pages/`, `services/`, `components/` en raíz del dominio).

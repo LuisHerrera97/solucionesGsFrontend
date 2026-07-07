@@ -1,5 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { abonarFichasVigentes, aplicarMora, obtenerCreditoPorId, obtenerCreditos } from '../../api';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { abonarFicha, aplicarMora, obtenerCreditoPorId, obtenerCreditos } from '../../api';
+import type { AbonarFichaCreditoRequest } from '../../types/types';
+
+const invalidateTrasFichaCredito = async (queryClient: QueryClient, creditoId: string) => {
+  await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos'] });
+  await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos', creditoId] });
+  await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos', creditoId, 'movimientos'] });
+  await queryClient.invalidateQueries({ queryKey: ['cobranza', 'pendientes'] });
+  await queryClient.invalidateQueries({ queryKey: ['creditos', 'dashboard', 'movimientos'] });
+  await queryClient.invalidateQueries({ queryKey: ['creditos', 'dashboard', 'movimientos-cobranza'] });
+};
 
 export const useCreditosQuery = (params?: { searchTerm?: string; page?: number; pageSize?: number; zonaId?: string }) => {
   return useQuery({
@@ -16,25 +26,12 @@ export const useCreditoByIdQuery = (id?: string) => {
   });
 };
 
-export const useAbonarFichasVigentesCreditoMutation = () => {
+export const useAbonarFichaCreditoMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: {
-      creditoId: string;
-      cantidadFichas: number;
-      montoAbono: number;
-      medio: 'Efectivo' | 'Transferencia' | 'Mixto';
-      montoEfectivo?: number;
-      montoTransferencia?: number;
-      idempotencyKey?: string;
-    }) => abonarFichasVigentes(payload),
+    mutationFn: (payload: AbonarFichaCreditoRequest) => abonarFicha(payload),
     onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos'] });
-      await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos', variables.creditoId] });
-      await queryClient.invalidateQueries({ queryKey: ['creditos', 'creditos', variables.creditoId, 'movimientos'] });
-      await queryClient.invalidateQueries({ queryKey: ['cobranza', 'pendientes'] });
-      await queryClient.invalidateQueries({ queryKey: ['creditos', 'dashboard', 'movimientos'] });
-      await queryClient.invalidateQueries({ queryKey: ['creditos', 'dashboard', 'movimientos-cobranza'] });
+      await invalidateTrasFichaCredito(queryClient, variables.creditoId);
     },
   });
 };

@@ -1,73 +1,132 @@
-# React + TypeScript + Vite
+# Financiera Soluciones — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web (PWA) para gestión de créditos, cobranza, clientes y administración del sistema.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** + **TypeScript**
+- **Vite 7** (build y dev server)
+- **React Router 7** (rutas)
+- **TanStack Query 5** (estado del servidor)
+- **Axios** (HTTP)
+- **Tailwind CSS 4** (estilos)
+- **Recharts** (gráficas del dashboard)
+- **vite-plugin-pwa** (instalable como app)
 
-## React Compiler
+## Requisitos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js 20+
+- npm
 
-## Expanding the ESLint configuration
+## Configuración
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Crear `.env` en la raíz del proyecto:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_API_URL=http://localhost:55501/
 ```
+
+Ajusta la URL al backend que uses en desarrollo o producción.
+
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compila para producción |
+| `npm run typecheck` | Verificación de tipos |
+| `npm run lint` | ESLint |
+| `npm run preview` | Vista previa del build |
+
+## Estructura del proyecto
+
+```
+src/
+├── core/                 # Infraestructura HTTP y endpoints
+│   ├── config/apiEndpoints.ts
+│   └── http/
+├── shared/               # Componentes, hooks y utilidades reutilizables
+│   ├── components/
+│   ├── cobranza/
+│   ├── creditos/
+│   ├── constants/
+│   ├── date/
+│   ├── hooks/
+│   ├── ticket/
+│   └── utils/
+├── features/             # Dominios de negocio
+│   ├── auth/
+│   ├── cobranza/
+│   ├── creditos/
+│   ├── general/
+│   ├── home/
+│   └── seguridad/
+├── layout/               # Layout, Sidebar, Navbar
+└── routes/               # AppRouter, ProtectedRoute
+```
+
+Cada dominio se organiza en **sub-features** con esta estructura:
+
+```
+features/{dominio}/{subFeature}/
+  pages/        → UI de la pantalla (presentación)
+  hooks/        → use{Nombre}Page + *Hooks (React Query)
+  components/   → UI específica del sub-feature
+```
+
+Las llamadas HTTP viven en `features/{dominio}/api.ts`. No se usan clases `*Service`.
+
+## Arquitectura y convenciones
+
+Las reglas para el asistente de Cursor están en `.cursor/rules/`:
+
+| Archivo | Tema |
+|---------|------|
+| `proyecto-general.mdc` | Stack, comandos, principios |
+| `arquitectura-features.mdc` | Dominios, sub-features, capas |
+| `react-paginas-hooks.mdc` | Páginas delgadas y hooks |
+| `api-y-datos.mdc` | API, React Query, errores |
+| `ui-estilos.mdc` | Tailwind y componentes compartidos |
+
+### Patrón de pantalla
+
+1. **`pages/X.tsx`** — solo JSX y composición.
+2. **`hooks/useXPage.ts`** — estado, permisos, handlers.
+3. **`hooks/xHooks.ts`** — `useQuery` / `useMutation`.
+4. Estados loading/error/vacío con `StatusPanel`.
+5. Permisos con `useAuth().canBoton('CLAVE_BOTON')`.
+
+## Rutas principales
+
+| Ruta | Pantalla |
+|------|----------|
+| `/` | Dashboard (home) |
+| `/login` | Inicio de sesión |
+| `/clientes` | Clientes |
+| `/creditos` | Listado de créditos |
+| `/creditos/nuevo` | Nuevo crédito |
+| `/creditos/:id` | Detalle del crédito |
+| `/creditos/:id/estado-cuenta` | Estado de cuenta |
+| `/creditos/:id/reestructura` | Reestructura |
+| `/creditos/:id/condonacion` | Condonación |
+| `/movimientos` | Movimientos de caja |
+| `/cobranza` | Cobranza del día |
+| `/pendientes` | Pendientes de cobro |
+| `/general/configuracion` | Configuración del sistema |
+| `/general/zonas` | Zonas de cobranza |
+| `/general/auditoria` | Auditoría |
+| `/general/feriados` | Feriados |
+| `/seguridad/usuarios` | Usuarios |
+| `/seguridad/perfiles` | Perfiles |
+| `/seguridad/permisos` | Permisos |
+| `/seguridad/elementos` | Módulos, páginas y botones |
+
+Rutas legacy (`/config`, `/sistema/*`) redirigen a las rutas actuales.
+
+## PWA
+
+En producción la app se registra como PWA (`vite-plugin-pwa`). Los assets estáticos se cachean; las llamadas a la API usan estrategia `NetworkOnly`.
